@@ -4,19 +4,28 @@ import com.github.varhastra.ohio.lexer.TokenType.*
 
 class Lexer(private val source: String) {
 
-    private val tokens = mutableListOf<Token>()
-    private val _unexpectedChars = mutableListOf<UnexpectedChar>()
     val unexpectedChars: List<UnexpectedChar>
         get() = _unexpectedChars
-    private var current = 0
-    private var line = 0
-    private var numOfCharsBeforeCurrentLine = 0
+    private val _unexpectedChars = mutableListOf<UnexpectedChar>()
 
     val hasErrors
         get() = _unexpectedChars.size > 0
 
+    private val tokens = mutableListOf<Token>()
+
+    private var currentPos = 0
+    private var line = 0
+    private var numOfCharsBeforeCurrentLine = 0
+
+    private val isAtEnd
+        get() = currentPos >= source.length
+
+    private val isNotAtEnd
+        get() = !isAtEnd
+
+
     fun lex(): List<Token> {
-        while (isNotAtEnd()) {
+        while (isNotAtEnd) {
             scanToken()
         }
         addEofToken()
@@ -35,7 +44,7 @@ class Lexer(private val source: String) {
     private fun matchToken(): Boolean {
         for (tokenPattern in tokenPatterns) {
             val (pattern, type) = tokenPattern
-            val matcher = pattern.matcher(source).region(current, source.length)
+            val matcher = pattern.matcher(source).region(currentPos, source.length)
 
             if (matcher.lookingAt()) {
                 val lexeme = matcher.group()
@@ -44,7 +53,7 @@ class Lexer(private val source: String) {
                 } else {
                     addToken(type, matcher.start() until matcher.end())
                 }
-                current = matcher.end()
+                currentPos = matcher.end()
                 return true
             }
         }
@@ -52,30 +61,30 @@ class Lexer(private val source: String) {
     }
 
     private fun matchNewline(): Boolean {
-        val matcher = newlinePattern.matcher(source).region(current, source.length)
+        val matcher = newlinePattern.matcher(source).region(currentPos, source.length)
 
         if (matcher.lookingAt()) {
             line++
-            current = matcher.end()
-            numOfCharsBeforeCurrentLine = current
+            currentPos = matcher.end()
+            numOfCharsBeforeCurrentLine = currentPos
             return true
         }
         return false
     }
 
     private fun matchSpace(): Boolean {
-        val matcher = spacePattern.matcher(source).region(current, source.length)
+        val matcher = spacePattern.matcher(source).region(currentPos, source.length)
 
         if (matcher.lookingAt()) {
-            current = matcher.end()
+            currentPos = matcher.end()
             return true
         }
         return false
     }
 
     private fun error() {
-        _unexpectedChars.add(UnexpectedChar(source[current], line, current - numOfCharsBeforeCurrentLine))
-        current++
+        _unexpectedChars.add(UnexpectedChar(source[currentPos], line, currentPos - numOfCharsBeforeCurrentLine))
+        currentPos++
     }
 
     private fun addToken(type: TokenType, range: IntRange, literal: Any? = null) {
@@ -87,10 +96,6 @@ class Lexer(private val source: String) {
     private fun addEofToken() {
         tokens.add(Token(EOF, "", null, line, IntRange.EMPTY, IntRange.EMPTY))
     }
-
-    private fun isAtEnd() = current >= source.length
-
-    private fun isNotAtEnd() = !isAtEnd()
 
 
     companion object {
