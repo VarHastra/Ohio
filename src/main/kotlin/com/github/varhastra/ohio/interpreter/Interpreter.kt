@@ -2,15 +2,36 @@ package com.github.varhastra.ohio.interpreter
 
 import com.github.varhastra.ohio.lexer.TokenType.*
 import com.github.varhastra.ohio.parser.Expr
+import com.github.varhastra.ohio.parser.Stmt
 
-class Interpreter : Expr.Visitor<Any> {
+class Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
 
-    fun interpret(expr: Expr): Any {
-        return evaluate(expr)
+    fun interpret(program: List<Stmt>) {
+        run(program)
+    }
+
+    private fun run(program: List<Stmt>) {
+        program.forEach { execute(it) }
+    }
+
+    private fun execute(statement: Stmt) {
+        return statement.accept(this)
     }
 
     private fun evaluate(expr: Expr): Any {
         return expr.accept(this)
+    }
+
+    override fun visit(stmt: Stmt.ExpressionStatement) {
+        evaluate(stmt.expression)
+    }
+
+    override fun visit(stmt: Stmt.PrintStmt) {
+        print(evaluate(stmt.expression))
+    }
+
+    override fun visit(stmt: Stmt.PrintlnStmt) {
+        println(evaluate(stmt.expression))
     }
 
     override fun visit(expr: Expr.Literal): Any {
