@@ -6,6 +6,18 @@ import com.github.varhastra.ohio.lexer.TokenType.*
 
 class Parser(private val tokens: List<Token>) {
 
+    class ParseException(
+        val token: Token,
+        message: String,
+        cause: Throwable? = null,
+        enableSuppression: Boolean = false,
+        writableStackTrace: Boolean = true
+    ) : RuntimeException(message, cause, enableSuppression, writableStackTrace)
+
+    private val _parseExceptions = mutableListOf<ParseException>()
+    val parseExceptions: List<ParseException>
+        get() = _parseExceptions
+
     private var currentPos = 0
 
     private val current
@@ -15,7 +27,7 @@ class Parser(private val tokens: List<Token>) {
         get() = tokens[currentPos - 1]
 
     private val isAtEnd
-        get() = currentPos >= tokens.size
+        get() = current.type == EOF
 
     private val isNotAtEnd
         get() = !isAtEnd
@@ -31,8 +43,13 @@ class Parser(private val tokens: List<Token>) {
 
     private fun program(): List<Stmt> {
         val statements = mutableListOf<Stmt>()
-        while (current.type != EOF) {
-            statements.add(statement())
+        while (isNotAtEnd) {
+            try {
+                statements.add(statement())
+            } catch (e: ParseException) {
+                _parseExceptions.add(e)
+                synchronize()
+            }
         }
         return statements
     }
@@ -70,12 +87,12 @@ class Parser(private val tokens: List<Token>) {
         val expr = logicalImp()
 
         return if (matchCurrentAgainst(COLON_EQUAL)) {
+            val equalsSign = previous
             if (expr is Expr.Var) {
                 val value = assignment()
                 Expr.Assignment(expr.identifier, value)
             } else {
-                // TODO: throw properly
-                throw RuntimeException("Invalid assignment target")
+                throw ParseException(equalsSign, "Invalid assignment target.")
             }
         } else {
             expr
@@ -150,8 +167,7 @@ class Parser(private val tokens: List<Token>) {
             return Expr.Grouping(expression)
         }
 
-        // TODO: throw properly
-        throw RuntimeException()
+        throw ParseException(current, "Unexpected expression.")
     }
 
     private fun matchCurrentAgainst(vararg targetTypes: TokenType): Boolean {
@@ -178,8 +194,7 @@ class Parser(private val tokens: List<Token>) {
             advance()
             return
         } else {
-            // TODO: throw properly
-            throw RuntimeException(msg)
+            throw ParseException(current, msg)
         }
     }
 
@@ -190,6 +205,15 @@ class Parser(private val tokens: List<Token>) {
     private fun advance() {
         if (isNotAtEnd) {
             currentPos++
+        }
+    }
+
+    private fun synchronize() {
+        while (!isAtEnd) {
+            if (previous.type == SEMICOLON) {
+                return
+            }
+            advance()
         }
     }
 }
