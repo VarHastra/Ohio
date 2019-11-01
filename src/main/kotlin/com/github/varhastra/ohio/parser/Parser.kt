@@ -21,8 +21,45 @@ class Parser(private val tokens: List<Token>) {
         get() = !isAtEnd
 
 
-    fun parse(): Expr {
+    fun parseExpression(): Expr {
         return expression()
+    }
+
+    fun parse(): List<Stmt> {
+        return program()
+    }
+
+    private fun program(): List<Stmt> {
+        val statements = mutableListOf<Stmt>()
+        while (current.type != EOF) {
+            statements.add(statement())
+        }
+        return statements
+    }
+
+    private fun statement(): Stmt {
+        if (matchCurrentAgainst(PRINT)) return finishPrintStatement()
+        if (matchCurrentAgainst(PRINTLN)) return finishPrintlnStatement()
+
+        return expressionStatement()
+    }
+
+    private fun finishPrintStatement(): Stmt {
+        val expression = expression()
+        require(SEMICOLON, "';' was expected")
+        return Stmt.PrintStmt(expression)
+    }
+
+    private fun finishPrintlnStatement(): Stmt {
+        val expression = expression()
+        require(SEMICOLON, "';' was expected")
+        return Stmt.PrintlnStmt(expression)
+    }
+
+    private fun expressionStatement(): Stmt {
+        val expression = expression()
+        require(SEMICOLON, "';' was expected")
+        return Stmt.ExpressionStatement(expression)
     }
 
     private fun expression(): Expr {
