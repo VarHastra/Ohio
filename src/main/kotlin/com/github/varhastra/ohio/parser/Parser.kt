@@ -18,6 +18,9 @@ class Parser(private val tokens: List<Token>) {
     val parseExceptions: List<ParseException>
         get() = _parseExceptions
 
+    val hasErrors
+        get() = _parseExceptions.isNotEmpty()
+
     private var currentPos = 0
 
     private val current
