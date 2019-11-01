@@ -6,6 +6,8 @@ import com.github.varhastra.ohio.parser.Stmt
 
 class Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
 
+    private val environment = Environment()
+
     fun interpret(program: List<Stmt>) {
         run(program)
     }
@@ -39,7 +41,7 @@ class Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
     }
 
     override fun visit(expr: Expr.Var): Any {
-        TODO("not implemented")
+        return environment.get(expr.identifier.lexeme)
     }
 
     override fun visit(expr: Expr.Grouping): Any {
@@ -74,7 +76,9 @@ class Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
     }
 
     override fun visit(expr: Expr.Assignment): Any {
-        TODO("not implemented")
+        val value = evaluate(expr.value)
+        environment.assign(expr.identifier.lexeme, value)
+        return value
     }
 
     private fun and(expr: Expr.Logical): Any {
