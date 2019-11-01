@@ -1,15 +1,37 @@
 package com.github.varhastra.ohio.interpreter
 
+import com.github.varhastra.ohio.lexer.Token
 import com.github.varhastra.ohio.lexer.TokenType.*
 import com.github.varhastra.ohio.parser.Expr
 import com.github.varhastra.ohio.parser.Stmt
 
 class Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
 
+    class RuntimeFailureException(
+        val token: Token,
+        message: String,
+        cause: Throwable? = null,
+        enableSuppression: Boolean = false,
+        writableStackTrace: Boolean = true
+    ) : RuntimeException(message, cause, enableSuppression, writableStackTrace)
+
+
+    var runtimeFailure: RuntimeFailureException? = null
+        private set
+
+    val hasErrors
+        get() = runtimeFailure != null
+
     private val environment = Environment()
 
+
     fun interpret(program: List<Stmt>) {
-        run(program)
+        try {
+            runtimeFailure = null
+            run(program)
+        } catch (e: RuntimeFailureException) {
+            runtimeFailure = e
+        }
     }
 
     private fun run(program: List<Stmt>) {
@@ -53,10 +75,10 @@ class Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
         val result = evaluate(expression)
         return when (operator.type) {
             NOT -> {
-                checkBoolean(result)
+                checkBoolean(operator, result)
                 !(result as Boolean)
             }
-            else -> throw RuntimeException("Unsupported operation") // TODO: throw properly
+            else -> throw RuntimeFailureException(operator, "Unsupported operation.")
         }
     }
 
@@ -71,7 +93,7 @@ class Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
             NOR -> nor(expr)
             IMP -> imp(expr)
             NIMP -> nimp(expr)
-            else -> throw RuntimeException("Unsupported operation") // TODO: throw properly
+            else -> throw RuntimeFailureException(operator, "Unsupported operation.")
         }
     }
 
@@ -83,13 +105,13 @@ class Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
 
     private fun and(expr: Expr.Logical): Any {
         val leftResult = evaluate(expr.left)
-        checkBoolean(leftResult)
+        checkBoolean(expr.operator, leftResult)
         leftResult as Boolean
         return if (!leftResult) {
             leftResult
         } else {
             val rightResult = evaluate(expr.right)
-            checkBoolean(rightResult)
+            checkBoolean(expr.operator, rightResult)
             rightResult
         }
     }
@@ -100,13 +122,13 @@ class Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
 
     private fun or(expr: Expr.Logical): Any {
         val leftResult = evaluate(expr.left)
-        checkBoolean(leftResult)
+        checkBoolean(expr.operator, leftResult)
         leftResult as Boolean
         return if (leftResult) {
             leftResult
         } else {
             val rightResult = evaluate(expr.right)
-            checkBoolean(rightResult)
+            checkBoolean(expr.operator, rightResult)
             rightResult
         }
     }
@@ -118,7 +140,7 @@ class Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
     private fun xor(expr: Expr.Logical): Any {
         val leftResult = evaluate(expr.left)
         val rightResult = evaluate(expr.right)
-        checkBoolean(leftResult, rightResult)
+        checkBoolean(expr.operator, leftResult, rightResult)
         leftResult as Boolean
         rightResult as Boolean
         return (leftResult && !rightResult) || (!leftResult && rightResult)
@@ -130,13 +152,13 @@ class Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
 
     private fun imp(expr: Expr.Logical): Any {
         val leftResult = evaluate(expr.left)
-        checkBoolean(leftResult)
+        checkBoolean(expr.operator, leftResult)
         leftResult as Boolean
         return if (!leftResult) {
             true
         } else {
             val rightResult = evaluate(expr.right)
-            checkBoolean(rightResult)
+            checkBoolean(expr.operator, rightResult)
             rightResult
         }
     }
@@ -145,10 +167,10 @@ class Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
         return !(imp(expr) as Boolean)
     }
 
-    private fun checkBoolean(vararg values: Any) {
+    private fun checkBoolean(operator: Token, vararg values: Any) {
         for (value in values) {
             if (value !is Boolean) {
-                throw RuntimeException("Unexpected type") // TODO: throw properly
+                throw RuntimeFailureException(operator, "Unexpected type. Boolean was expected.")
             }
         }
     }
