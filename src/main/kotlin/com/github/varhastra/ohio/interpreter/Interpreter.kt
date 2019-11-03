@@ -63,7 +63,11 @@ class Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
     }
 
     override fun visit(expr: Expr.Var): Any {
-        return environment.get(expr.identifier.lexeme)
+        return try {
+            environment.get(expr.identifier.lexeme)
+        } catch (e: Environment.UnresolvedIdentifierException) {
+            throw RuntimeFailureException(expr.identifier, "Unresolved identifier encountered.", e)
+        }
     }
 
     override fun visit(expr: Expr.Grouping): Any {
