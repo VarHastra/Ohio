@@ -72,7 +72,7 @@ fun reportLexerError(char: UnexpectedChar) {
 }
 
 fun reportParserErrors(source: String, exceptions: List<Parser.ParseException>) {
-    println("${exceptions.size} errors found:")
+    println("${exceptions.size} error(s) found:")
 
     val numOfErrorsToReport = 10
     val numOfUnreportedErrors = exceptions.size - numOfErrorsToReport
