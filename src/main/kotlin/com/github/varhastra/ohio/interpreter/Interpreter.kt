@@ -51,11 +51,13 @@ class Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
     }
 
     override fun visit(stmt: Stmt.PrintStmt) {
-        print(evaluate(stmt.expression))
+        val value = evaluate(stmt.expression)
+        print(stringify(value))
     }
 
     override fun visit(stmt: Stmt.PrintlnStmt) {
-        println(evaluate(stmt.expression))
+        val value = evaluate(stmt.expression)
+        println(stringify(value))
     }
 
     override fun visit(expr: Expr.Literal): Any {
@@ -176,6 +178,15 @@ class Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
             if (value !is Boolean) {
                 throw RuntimeFailureException(operator, "Unexpected type. Boolean was expected.")
             }
+        }
+    }
+
+    private fun stringify(obj: Any): String {
+        return when (obj) {
+            is Boolean -> {
+                return if (obj) "1" else "0"
+            }
+            else -> obj.toString()
         }
     }
 }
