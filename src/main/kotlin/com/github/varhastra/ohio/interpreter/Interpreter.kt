@@ -1,5 +1,7 @@
 package com.github.varhastra.ohio.interpreter
 
+import com.github.varhastra.ohio.common.Position
+import com.github.varhastra.ohio.common.exceptions.PositionAwareException
 import com.github.varhastra.ohio.lexer.Token
 import com.github.varhastra.ohio.lexer.TokenType.*
 import com.github.varhastra.ohio.parser.Expr
@@ -13,7 +15,9 @@ class Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
         cause: Throwable? = null,
         enableSuppression: Boolean = false,
         writableStackTrace: Boolean = true
-    ) : RuntimeException(message, cause, enableSuppression, writableStackTrace)
+    ) : PositionAwareException(
+        Position(token.line, token.columnRange), message, cause, enableSuppression, writableStackTrace
+    )
 
 
     var runtimeFailure: RuntimeFailureException? = null

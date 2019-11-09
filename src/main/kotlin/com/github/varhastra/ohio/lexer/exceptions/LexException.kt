@@ -1,11 +1,12 @@
 package com.github.varhastra.ohio.lexer.exceptions
 
-import com.github.varhastra.ohio.lexer.Position
+import com.github.varhastra.ohio.common.Position
+import com.github.varhastra.ohio.common.exceptions.PositionAwareException
 
 open class LexException(
-    val positionInTheSource: Position,
+    positionInTheSource: Position,
     message: String,
     cause: Throwable? = null,
     enableSuppression: Boolean = false,
     writableStackTrace: Boolean = true
-) : RuntimeException(message, cause, enableSuppression, writableStackTrace)
+) : PositionAwareException(positionInTheSource, message, cause, enableSuppression, writableStackTrace)

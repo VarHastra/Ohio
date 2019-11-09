@@ -1,5 +1,6 @@
 package com.github.varhastra.ohio.lexer
 
+import com.github.varhastra.ohio.common.Position
 import com.github.varhastra.ohio.lexer.TokenType.*
 import com.github.varhastra.ohio.lexer.exceptions.LexException
 import com.github.varhastra.ohio.lexer.exceptions.UnexpectedSymbolException

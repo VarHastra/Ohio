@@ -1,6 +1,6 @@
 package com.github.varhastra.ohio.lexer.exceptions
 
-import com.github.varhastra.ohio.lexer.Position
+import com.github.varhastra.ohio.common.Position
 
 class UnexpectedSymbolException(
     positionInTheSource: Position,
