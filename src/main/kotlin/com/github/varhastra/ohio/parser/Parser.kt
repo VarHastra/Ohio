@@ -95,7 +95,7 @@ class Parser(private val tokens: List<Token>) {
     }
 
     private fun assignment(): Expr {
-        val expr = logicalImp()
+        val expr = equality()
 
         return if (matchCurrentAgainst(COLON_EQUAL)) {
             val equalsSign = previous
@@ -108,6 +108,30 @@ class Parser(private val tokens: List<Token>) {
         } else {
             expr
         }
+    }
+
+    private fun equality(): Expr {
+        var expr = comparison()
+
+        while (matchCurrentAgainst(EQUAL_EQUAL, BANG_EQUAL)) {
+            val operator = previous
+            val right = comparison()
+            expr = Expr.Binary(expr, operator, right)
+        }
+
+        return expr
+    }
+
+    private fun comparison(): Expr {
+        var expr = logicalImp()
+
+        while (matchCurrentAgainst(GREATER, LESS, GREATER_EQUAL, LESS_EQUAL)) {
+            val operator = previous
+            val right = logicalImp()
+            expr = Expr.Binary(expr, operator, right)
+        }
+
+        return expr
     }
 
     private fun logicalImp(): Expr {
@@ -147,19 +171,43 @@ class Parser(private val tokens: List<Token>) {
     }
 
     private fun logicalAnd(): Expr {
-        var expr = unary()
+        var expr = addition()
 
         while (matchCurrentAgainst(AND, NAND)) {
             val operator = previous
-            val right = unary()
+            val right = addition()
             expr = Expr.Logical(expr, operator, right)
         }
 
         return expr
     }
 
+    private fun addition(): Expr {
+        var expr = multiplication()
+
+        while (matchCurrentAgainst(PLUS, MINUS)) {
+            val operator = previous
+            val right = multiplication()
+            expr = Expr.Binary(expr, operator, right)
+        }
+
+        return expr
+    }
+
+    private fun multiplication(): Expr {
+        var expr = unary()
+
+        while (matchCurrentAgainst(STAR, SLASH, MOD)) {
+            val operator = previous
+            val right = unary()
+            expr = Expr.Binary(expr, operator, right)
+        }
+
+        return expr
+    }
+
     private fun unary(): Expr {
-        return if (matchCurrentAgainst(NOT)) {
+        return if (matchCurrentAgainst(NOT, MINUS)) {
             val operator = previous
             Expr.Unary(operator, unary())
         } else {
