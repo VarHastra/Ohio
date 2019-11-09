@@ -1,20 +1,22 @@
 package com.github.varhastra.ohio.lexer
 
 import com.github.varhastra.ohio.lexer.TokenType.*
+import com.github.varhastra.ohio.lexer.exceptions.LexException
+import com.github.varhastra.ohio.lexer.exceptions.UnexpectedSymbolException
 
 class Lexer(private val source: String) {
 
-    val unexpectedChars: List<UnexpectedChar>
-        get() = _unexpectedChars
-    private val _unexpectedChars = mutableListOf<UnexpectedChar>()
+    val lexExceptions: List<LexException>
+        get() = _lexExceptions
+    private val _lexExceptions = mutableListOf<LexException>()
 
     val hasErrors
-        get() = _unexpectedChars.size > 0
+        get() = _lexExceptions.size > 0
 
     private val tokens = mutableListOf<Token>()
 
     private var currentPos = 0
-    private var line = 0
+    private var currentLine = 0
     private var numOfCharsBeforeCurrentLine = 0
 
     private val isAtEnd
@@ -38,7 +40,7 @@ class Lexer(private val source: String) {
         if (matchNewline()) return
         if (matchSpace()) return
 
-        error()
+        registerError()
     }
 
     private fun matchToken(): Boolean {
@@ -64,7 +66,7 @@ class Lexer(private val source: String) {
         val matcher = newlinePattern.matcher(source).region(currentPos, source.length)
 
         if (matcher.lookingAt()) {
-            line++
+            currentLine++
             currentPos = matcher.end()
             numOfCharsBeforeCurrentLine = currentPos
             return true
@@ -82,19 +84,33 @@ class Lexer(private val source: String) {
         return false
     }
 
-    private fun error() {
-        _unexpectedChars.add(UnexpectedChar(source[currentPos], line, currentPos - numOfCharsBeforeCurrentLine))
+    private fun registerError() {
+        val columnRange = sourceRangeToColumnRange(currentPos..currentPos)
+        val position = Position(currentLine, columnRange)
+        _lexExceptions.add(UnexpectedSymbolException(position, "Unexpected symbol encountered at $position."))
         currentPos++
     }
 
     private fun addToken(type: TokenType, range: IntRange, literal: Any? = null) {
         val lexeme = source.substring(range)
         val columnRange = (range.first - numOfCharsBeforeCurrentLine)..(range.last - numOfCharsBeforeCurrentLine)
-        tokens.add(Token(type, lexeme, literal, line, columnRange, range))
+        tokens.add(Token(type, lexeme, literal, currentLine, columnRange, range))
     }
 
     private fun addEofToken() {
-        tokens.add(Token(EOF, "", null, line, IntRange.EMPTY, IntRange.EMPTY))
+        tokens.add(Token(EOF, "", null, currentLine, IntRange.EMPTY, IntRange.EMPTY))
+    }
+
+    private fun sourceRangeToColumnRange(range: IntRange): IntRange {
+        val start = range.first - numOfCharsBeforeCurrentLine
+        val end = range.last - numOfCharsBeforeCurrentLine
+        return start..end
+    }
+
+    private fun columnRangeToSourceRange(range: IntRange): IntRange {
+        val start = range.first + numOfCharsBeforeCurrentLine
+        val end = range.last + numOfCharsBeforeCurrentLine
+        return start..end
     }
 
 

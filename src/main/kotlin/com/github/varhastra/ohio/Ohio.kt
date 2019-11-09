@@ -2,7 +2,8 @@ package com.github.varhastra.ohio
 
 import com.github.varhastra.ohio.interpreter.Interpreter
 import com.github.varhastra.ohio.lexer.Lexer
-import com.github.varhastra.ohio.lexer.UnexpectedChar
+import com.github.varhastra.ohio.lexer.exceptions.LexException
+import com.github.varhastra.ohio.lexer.exceptions.UnexpectedSymbolException
 import com.github.varhastra.ohio.parser.Parser
 import java.io.File
 import kotlin.system.exitProcess
@@ -34,7 +35,7 @@ private fun launch(source: String) {
     val lexer = Lexer(source)
     val tokens = lexer.lex()
     if (lexer.hasErrors) {
-        reportLexerErrors(lexer.unexpectedChars)
+        reportLexerErrors(source, lexer.lexExceptions)
         exitProcess(ExitCode.DATA_FORMAT_ERROR.value)
     }
 
@@ -53,13 +54,13 @@ private fun launch(source: String) {
     }
 }
 
-private fun reportLexerErrors(unexpectedChars: List<UnexpectedChar>) {
+private fun reportLexerErrors(source: String, unexpectedChars: List<LexException>) {
     println("${unexpectedChars.size} error(s) found:")
 
     val numOfErrorsToReport = 10
     val numOfUnreportedErrors = unexpectedChars.size - numOfErrorsToReport
-    unexpectedChars.take(numOfErrorsToReport).forEach { char ->
-        reportLexerError(char)
+    unexpectedChars.take(numOfErrorsToReport).forEach { lexException ->
+        reportLexerError(source, lexException)
     }
 
     if (numOfUnreportedErrors > 0) {
@@ -67,8 +68,17 @@ private fun reportLexerErrors(unexpectedChars: List<UnexpectedChar>) {
     }
 }
 
-fun reportLexerError(char: UnexpectedChar) {
-    println("(${char.line}:${char.column}) unexpected char '${char.char}'")
+private fun reportLexerError(source: String, exception: LexException) {
+    when (exception) {
+        is UnexpectedSymbolException -> report(source, exception)
+        else -> throw RuntimeException("Unknown LexerException encountered.")
+    }
+}
+
+private fun report(source: String, exception: UnexpectedSymbolException) {
+    val pos = exception.positionInTheSource
+    val errorLine = source.lines()[pos.line]
+    println("(${pos.line}:${pos.columnRange.first}) unexpected symbol: '${errorLine.substring(pos.columnRange)}'")
 }
 
 fun reportParserErrors(source: String, exceptions: List<Parser.ParseException>) {
