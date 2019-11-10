@@ -327,11 +327,13 @@ class Parser(private val tokens: List<Token>) {
     }
 
     private fun synchronize() {
+        advance()
+
         while (!isAtEnd) {
             if (previous.type == SEMICOLON) {
                 return
             }
-            if (current.type in setOf(IF, WHILE, REPEAT)) {
+            if (current.type in setOf(IF, WHILE, REPEAT, PRINT, PRINTLN, LEFT_BRACE)) {
                 return
             }
             advance()
