@@ -68,9 +68,66 @@ class Parser(private val tokens: List<Token>) {
     private fun statement(): Stmt {
         if (matchCurrentAgainst(PRINT)) return finishPrintStatement()
         if (matchCurrentAgainst(PRINTLN)) return finishPrintlnStatement()
+        if (matchCurrentAgainst(LEFT_BRACE)) return finishBlockStatement()
+        if (matchCurrentAgainst(IF)) return finishIfStatement(previous)
+        if (matchCurrentAgainst(WHILE)) return finishWhileStatement(previous)
+        if (matchCurrentAgainst(REPEAT)) return finishRepeatStatement(previous)
 
         return expressionStatement()
     }
+
+    private fun finishBlockStatement(): Stmt.BlockStmt {
+        val statements = mutableListOf<Stmt>()
+
+        while (!checkCurrentAgainst(RIGHT_BRACE) && !isAtEnd) {
+            statements.add(statement())
+        }
+
+        require(RIGHT_BRACE, "'}' was expected.")
+        return Stmt.BlockStmt(statements)
+    }
+
+    private fun finishIfStatement(token: Token): Stmt.IfStmt {
+        val condition = expression()
+
+        require(LEFT_BRACE, "A block was expected.")
+        val thenBranch = finishBlockStatement()
+
+        val elseBranch = if (matchCurrentAgainst(ELSE)) {
+            if (matchCurrentAgainst(IF)) {
+                finishIfStatement(previous)
+            } else {
+                require(LEFT_BRACE, "'if' or block statement was expected.")
+                finishBlockStatement()
+            }
+        } else {
+            null
+        }
+
+        return Stmt.IfStmt(token, condition, thenBranch, elseBranch)
+    }
+
+    private fun finishRepeatStatement(token: Token): Stmt {
+        require(LEFT_BRACE, "block statement was expected.")
+
+        val body = finishBlockStatement()
+        require(WHILE, "'while' was expected")
+
+        val condition = expression()
+        require(SEMICOLON, "';' was expected")
+
+        return Stmt.RepeatStmt(token, condition, body)
+    }
+
+    private fun finishWhileStatement(token: Token): Stmt {
+        val condition = expression()
+
+        require(LEFT_BRACE, "block statement was expected.")
+        val body = finishBlockStatement()
+
+        return Stmt.WhileStmt(token, condition, body)
+    }
+
 
     private fun finishPrintStatement(): Stmt {
         val expression = expression()
@@ -218,6 +275,8 @@ class Parser(private val tokens: List<Token>) {
     private fun primary(): Expr {
         if (matchCurrentAgainst(TRUE)) return Expr.Literal(true)
         if (matchCurrentAgainst(FALSE)) return Expr.Literal(false)
+        if (matchCurrentAgainst(NUMBER)) return Expr.Literal(previous.literal!!)
+        if (matchCurrentAgainst(STRING)) return Expr.Literal(previous.literal!!)
         if (matchCurrentAgainst(IDENTIFIER)) return Expr.Var(previous)
 
         if (matchCurrentAgainst(LEFT_PAREN)) {
@@ -270,6 +329,9 @@ class Parser(private val tokens: List<Token>) {
     private fun synchronize() {
         while (!isAtEnd) {
             if (previous.type == SEMICOLON) {
+                return
+            }
+            if (current.type in setOf(IF, WHILE, REPEAT)) {
                 return
             }
             advance()

@@ -54,6 +54,41 @@ class Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
         evaluate(stmt.expression)
     }
 
+    override fun visit(stmt: Stmt.BlockStmt) {
+        stmt.statements.forEach { statement ->
+            execute(statement)
+        }
+    }
+
+    override fun visit(stmt: Stmt.IfStmt) {
+        val conditionValue = evaluate(stmt.condition)
+        checkBoolean(stmt.token, conditionValue)
+        conditionValue as Boolean
+        if (conditionValue) {
+            execute(stmt.thenBranch)
+        } else if (stmt.elseBranch != null) {
+            execute(stmt.elseBranch)
+        }
+    }
+
+    override fun visit(stmt: Stmt.WhileStmt) {
+        var conditionValue = evaluate(stmt.condition)
+        checkBoolean(stmt.token, conditionValue)
+        while (conditionValue as Boolean) {
+            execute(stmt.body)
+            conditionValue = evaluate(stmt.condition)
+        }
+    }
+
+    override fun visit(stmt: Stmt.RepeatStmt) {
+        var conditionValue = evaluate(stmt.condition)
+        checkBoolean(stmt.token, conditionValue)
+        do {
+            execute(stmt.body)
+            conditionValue = evaluate(stmt.condition)
+        } while (conditionValue as Boolean)
+    }
+
     override fun visit(stmt: Stmt.PrintStmt) {
         val value = evaluate(stmt.expression)
         print(stringify(value))
@@ -88,8 +123,148 @@ class Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
                 checkBoolean(operator, result)
                 !(result as Boolean)
             }
+            MINUS -> {
+                checkNumber(operator, result)
+                -(result as Long)
+            }
             else -> throw RuntimeFailureException(operator, "Unsupported operation.")
         }
+    }
+
+    override fun visit(expr: Expr.Binary): Any {
+        return when (expr.operator.type) {
+            PLUS -> add(expr)
+            MINUS -> sub(expr)
+            STAR -> mul(expr)
+            SLASH -> div(expr)
+            MOD -> mod(expr)
+            GREATER -> greater(expr)
+            LESS -> less(expr)
+            GREATER_EQUAL -> greaterEqual(expr)
+            LESS_EQUAL -> lessEqual(expr)
+            EQUAL_EQUAL -> equal(expr)
+            BANG_EQUAL -> notEqual(expr)
+            else -> throw RuntimeFailureException(expr.operator, "Unsupported operator.")
+        }
+    }
+
+    private fun greater(expr: Expr.Binary): Any {
+        val (l, operator, r) = expr
+        val left = evaluate(l)
+        val right = evaluate(r)
+
+        checkNumber(operator, left, right)
+        left as Long
+        right as Long
+
+        return left > right
+    }
+
+    private fun less(expr: Expr.Binary): Any {
+        val (l, operator, r) = expr
+        val left = evaluate(l)
+        val right = evaluate(r)
+
+        checkNumber(operator, left, right)
+        left as Long
+        right as Long
+
+        return left < right
+    }
+
+    private fun greaterEqual(expr: Expr.Binary): Any {
+        val (l, operator, r) = expr
+        val left = evaluate(l)
+        val right = evaluate(r)
+
+        checkNumber(operator, left, right)
+        left as Long
+        right as Long
+
+        return left >= right
+    }
+
+    private fun lessEqual(expr: Expr.Binary): Any {
+        val (l, operator, r) = expr
+        val left = evaluate(l)
+        val right = evaluate(r)
+
+        checkNumber(operator, left, right)
+        left as Long
+        right as Long
+
+        return left <= right
+    }
+
+    private fun equal(expr: Expr.Binary): Any {
+        val (l, operator, r) = expr
+        val left = evaluate(l)
+        val right = evaluate(r)
+
+        return left == right
+    }
+
+    private fun notEqual(expr: Expr.Binary): Any {
+        return !(equal(expr) as Boolean)
+    }
+
+    private fun add(expr: Expr.Binary): Any {
+        val (l, operator, r) = expr
+        val left = evaluate(l)
+        val right = evaluate(r)
+
+        return if (left is String || right is String) {
+            stringify(left) + stringify(right)
+        } else {
+            checkNumber(operator, left, right)
+            left as Long
+            right as Long
+            left + right
+        }
+    }
+
+    private fun sub(expr: Expr.Binary): Any {
+        val (l, operator, r) = expr
+        val left = evaluate(l)
+        val right = evaluate(r)
+
+        checkNumber(operator, left, right)
+        left as Long
+        right as Long
+        return left - right
+    }
+
+    private fun mul(expr: Expr.Binary): Any {
+        val (l, operator, r) = expr
+        val left = evaluate(l)
+        val right = evaluate(r)
+
+        checkNumber(operator, left, right)
+        left as Long
+        right as Long
+        return left * right
+    }
+
+    private fun div(expr: Expr.Binary): Any {
+        val (l, operator, r) = expr
+        val left = evaluate(l)
+        val right = evaluate(r)
+
+        checkNumber(operator, left, right)
+        left as Long
+        right as Long
+        return left / right
+    }
+
+    private fun mod(expr: Expr.Binary): Any {
+        val (l, operator, r) = expr
+        val left = evaluate(l)
+        val right = evaluate(r)
+
+        checkNumber(operator, left, right)
+        left as Long
+        right as Long
+        return left % right
     }
 
     override fun visit(expr: Expr.Logical): Any {
@@ -177,6 +352,14 @@ class Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
         return !(imp(expr) as Boolean)
     }
 
+    private fun checkNumber(operator: Token, vararg values: Any) {
+        values.forEach { value ->
+            if (value !is Long) {
+                throw RuntimeFailureException(operator, "Unexpected type. Integer was expected.")
+            }
+        }
+    }
+
     private fun checkBoolean(operator: Token, vararg values: Any) {
         for (value in values) {
             if (value !is Boolean) {
@@ -187,8 +370,10 @@ class Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
 
     private fun stringify(obj: Any): String {
         return when (obj) {
+            is String -> obj
+            is Long -> obj.toString()
             is Boolean -> {
-                return if (obj) "1" else "0"
+                return if (obj) "true" else "false"
             }
             else -> obj.toString()
         }

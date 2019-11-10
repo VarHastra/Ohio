@@ -35,4 +35,8 @@ class AstPrinter(private val expression: Expr) : Expr.Visitor<String> {
         val (identifier, value) = expr
         return "(${identifier.lexeme} := ${value.accept(this)})"
     }
+
+    override fun visit(expr: Expr.Binary): String {
+        TODO("Not implemented")
+    }
 }
