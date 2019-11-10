@@ -1,6 +1,6 @@
 package com.github.varhastra.ohio.interpreter
 
-class Environment {
+class Environment(private val enclosing: Environment? = null) {
 
     class UnresolvedIdentifierException(
         message: String,
@@ -13,12 +13,34 @@ class Environment {
     private val variables = mutableMapOf<String, Any>()
 
     fun assign(name: String, value: Any) {
-        variables[name] = value
+        val env = findScopeOfDeclarationFor(name)
+        if (env != null) {
+            env.variables[name] = value
+        } else {
+            variables[name] = value
+        }
+    }
+
+    private fun findScopeOfDeclarationFor(name: String): Environment? {
+        var env: Environment? = this
+        while (env != null) {
+            if (env.isDeclaredInCurrentScope(name)) {
+                return env
+            }
+            env = env.enclosing
+        }
+        return null
+    }
+
+    private fun isDeclaredInCurrentScope(name: String): Boolean {
+        return name in variables
     }
 
     fun get(name: String): Any {
-        return variables.getOrElse(name) {
-            throw UnresolvedIdentifierException("Unresolved identifier: '$name'.")
+        return when {
+            name in variables -> variables[name]!!
+            enclosing != null -> enclosing.get(name)
+            else -> throw UnresolvedIdentifierException("Unresolved identifier: '$name'.")
         }
     }
 }

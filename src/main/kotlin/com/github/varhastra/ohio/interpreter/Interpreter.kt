@@ -26,7 +26,7 @@ class Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
     val hasErrors
         get() = runtimeFailure != null
 
-    private val environment = Environment()
+    private var environment = Environment()
 
 
     fun interpret(program: List<Stmt>) {
@@ -55,8 +55,18 @@ class Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
     }
 
     override fun visit(stmt: Stmt.BlockStmt) {
-        stmt.statements.forEach { statement ->
-            execute(statement)
+        executeBlock(stmt, Environment(environment))
+    }
+
+    private fun executeBlock(stmt: Stmt.BlockStmt, environment: Environment) {
+        val outer = this.environment
+        try {
+            this.environment = environment
+            stmt.statements.forEach { statement ->
+                execute(statement)
+            }
+        } finally {
+            this.environment = outer
         }
     }
 
