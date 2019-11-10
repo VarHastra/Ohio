@@ -19,3 +19,43 @@ addition -> multiplication ((PLUS, MINUS) multiplication)*
 multiplication -> unary ((STAR, SLASH, MOD) unary)*
 unary -> ((NOT | MINUS) unary) | primary
 primary -> TRUE, FALSE, NUMBER, STRING, IDENTIFIER, (LEFT_PAREN expr RIGHT_PAREN)
+
+// Terminals
+LEFT_PAREN -> (
+RIGHT_PAREN -> )
+LEFT_BRACE -> {
+RIGHT_BRACE -> }
+SEMICOLON -> ;
+PLUS -> '+'
+MINUS -> -
+STAR -> '*'
+SLASH -> /
+MOD -> %
+COLON_EQUAL -> :=
+EQUAL_EQUAL -> ==
+BANG_EQUAL -> !=
+GREATER -> >
+GREATER_EQUAL -> >=
+LESS -> <
+LESS_EQUAL -> <=
+TRUE -> true
+FALSE -> false
+NOT -> not
+AND -> and
+NAND -> nand
+OR -> or
+NOR -> nor
+IMP -> imp
+NIMP -> nimp
+XOR -> xor
+XNOR -> xnor
+PRINT -> print
+PRINTLN -> println
+IF -> if
+ELSE -> else
+WHILE -> while
+REPEAT -> repeat
+NUMBER -> [0-9][_0-9]*
+STRING -> "[^\n"]*"
+IDENTIFIER -> [_a-zA-Z][_a-zA-Z0-9]*
+EOF
