@@ -58,6 +58,8 @@ class Lexer(private val source: String) {
                     STRING -> addStringToken(sourceRange)
                     IDENTIFIER -> if (lexeme in keywords) {
                         addToken(keywords.getValue(lexeme), sourceRange)
+                    } else {
+                        addToken(type, sourceRange)
                     }
                     else -> addToken(type, sourceRange)
                 }
