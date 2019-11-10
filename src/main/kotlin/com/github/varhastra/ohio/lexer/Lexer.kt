@@ -166,7 +166,7 @@ class Lexer(private val source: String) {
             "<".toPattern() to LESS,
             "[_a-zA-Z][_a-zA-Z0-9]*".toPattern() to IDENTIFIER,
             "[0-9][_0-9]*".toPattern() to NUMBER,
-            "\"[^\n]*\"".toPattern() to STRING
+            "\"[^\n\"]*\"".toPattern() to STRING
         )
 
         private val keywords = mapOf(
