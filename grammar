@@ -1,5 +1,5 @@
 program -> stmt* EOF
-stmt -> exprStmt, printStmt, printlnStmt, block, ifStmt, whileStmt, repeatStmt
+stmt -> exprStmt | printStmt | printlnStmt | block | ifStmt | whileStmt | repeatStmt
 exprStmt -> expr SEMICOLON
 printStmt -> PRINT expr SEMICOLON
 printlnStmt -> PRINTLN expr SEMICOLON
@@ -9,16 +9,16 @@ whileStmt -> WHILE expr block
 repeatStmt -> REPEAT block WHILE expr SEMICOLON
 expr -> assignment
 assignment -> (IDENTIFIER COLON_EQUAL assignment) | equality
-equality -> comparison ((EQUAL_EQUAL, BANG_EQUAL) comparison)*
-comparison -> logicalImp ((GREATER, GREATER_EQ, LESS, LESS_EQ) logicalImp)*
+equality -> comparison ((EQUAL_EQUAL | BANG_EQUAL) comparison)*
+comparison -> logicalImp ((GREATER | GREATER_EQ | LESS | LESS_EQ) logicalImp)*
 logicalImp -> logicalOr (IMP | NIMP) logicalImp
-logicalOr -> logicalXor ((OR, NOR) logicalXor)*
-logicalXor -> logicalAnd ((XOR, XNOR) logicalAnd)*
-logicalAnd -> addition ((AND, NAND) addition)*
-addition -> multiplication ((PLUS, MINUS) multiplication)*
-multiplication -> unary ((STAR, SLASH, MOD) unary)*
+logicalOr -> logicalXor ((OR | NOR) logicalXor)*
+logicalXor -> logicalAnd ((XOR | XNOR) logicalAnd)*
+logicalAnd -> addition ((AND | NAND) addition)*
+addition -> multiplication ((PLUS | MINUS) multiplication)*
+multiplication -> unary ((STAR | SLASH | MOD) unary)*
 unary -> ((NOT | MINUS) unary) | primary
-primary -> TRUE, FALSE, NUMBER, STRING, IDENTIFIER, (LEFT_PAREN expr RIGHT_PAREN)
+primary -> TRUE | FALSE | NUMBER | STRING | IDENTIFIER | (LEFT_PAREN expr RIGHT_PAREN)
 
 // Terminals
 LEFT_PAREN -> (
