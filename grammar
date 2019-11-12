@@ -2,8 +2,8 @@ program -> stmt* EOF
 stmt -> exprStmt, printStmt, printlnStmt, block, ifStmt, whileStmt, repeatStmt
 exprStmt -> expr SEMICOLON
 printStmt -> PRINT expr SEMICOLON
-printlnStmt -> PRINT expr SEMICOLON
-block -> LEFT_BRACE stmt RIGHT_BRACE
+printlnStmt -> PRINTLN expr SEMICOLON
+block -> LEFT_BRACE stmt* RIGHT_BRACE
 ifStmt -> IF expr block (ELSE (block | ifStmt))?
 whileStmt -> WHILE expr block
 repeatStmt -> REPEAT block WHILE expr SEMICOLON
