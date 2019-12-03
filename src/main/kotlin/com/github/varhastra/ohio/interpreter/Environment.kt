@@ -13,32 +13,20 @@ class Environment(private val enclosing: Environment? = null) {
     private val variables = mutableMapOf<String, Any>()
 
     fun assign(name: String, value: Any) {
-        val env = findScopeOfDeclarationFor(name)
-        if (env != null) {
-            env.variables[name] = value
-        } else {
-            variables[name] = value
-        }
-    }
-
-    private fun findScopeOfDeclarationFor(name: String): Environment? {
         var env: Environment? = this
-        while (env != null) {
-            if (env.isDeclaredInCurrentScope(name)) {
-                return env
-            }
+        var declarationFound = false
+        while (env != null && !declarationFound) {
+            declarationFound = env.variables.replace(name, value) != null
             env = env.enclosing
         }
-        return null
-    }
 
-    private fun isDeclaredInCurrentScope(name: String): Boolean {
-        return name in variables
+        if (!declarationFound) {
+            this.variables[name] = value
+        }
     }
 
     fun get(name: String): Any {
-        return when {
-            name in variables -> variables[name]!!
+        return variables[name] ?: when {
             enclosing != null -> enclosing.get(name)
             else -> throw UnresolvedIdentifierException("Unresolved identifier: '$name'.")
         }
