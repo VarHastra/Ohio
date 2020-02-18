@@ -144,7 +144,7 @@ class Parser(private val tokens: List<Token>) {
     private fun expressionStatement(): Stmt {
         val expression = expression()
         require(SEMICOLON, "';' was expected.")
-        return Stmt.ExpressionStatement(expression)
+        return Stmt.ExpressionStmt(expression)
     }
 
     private fun expression(): Expr {

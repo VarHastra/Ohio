@@ -7,8 +7,9 @@ import com.github.varhastra.ohio.lexer.TokenType.*
 import com.github.varhastra.ohio.parser.Expr
 import com.github.varhastra.ohio.parser.Expr.*
 import com.github.varhastra.ohio.parser.Stmt
+import com.github.varhastra.ohio.parser.Stmt.*
 
-class Interpreter : Stmt.Visitor<Unit> {
+class Interpreter {
 
     class RuntimeFailureException(
         val token: Token,
@@ -43,31 +44,35 @@ class Interpreter : Stmt.Visitor<Unit> {
         program.forEach { execute(it) }
     }
 
-    private fun execute(statement: Stmt) {
-        return statement.accept(this)
+    private fun execute(statement: Stmt) = when (statement) {
+        is ExpressionStmt -> execute(statement)
+        is BlockStmt -> execute(statement)
+        is IfStmt -> execute(statement)
+        is WhileStmt -> execute(statement)
+        is RepeatStmt -> execute(statement)
+        is PrintStmt -> execute(statement)
+        is PrintlnStmt -> execute(statement)
     }
 
-    private fun evaluate(expr: Expr): Any {
-        return when (expr) {
-            is Literal -> evaluate(expr)
-            is Var -> evaluate(expr)
-            is Grouping -> evaluate(expr)
-            is Unary -> evaluate(expr)
-            is Binary -> evaluate(expr)
-            is Logical -> evaluate(expr)
-            is Assignment -> evaluate(expr)
-        }
+    private fun evaluate(expr: Expr) = when (expr) {
+        is Literal -> evaluate(expr)
+        is Var -> evaluate(expr)
+        is Grouping -> evaluate(expr)
+        is Unary -> evaluate(expr)
+        is Binary -> evaluate(expr)
+        is Logical -> evaluate(expr)
+        is Assignment -> evaluate(expr)
     }
 
-    override fun visit(stmt: Stmt.ExpressionStatement) {
+    private fun execute(stmt: ExpressionStmt) {
         evaluate(stmt.expression)
     }
 
-    override fun visit(stmt: Stmt.BlockStmt) {
+    private fun execute(stmt: BlockStmt) {
         executeBlock(stmt, Environment(environment))
     }
 
-    private fun executeBlock(stmt: Stmt.BlockStmt, environment: Environment) {
+    private fun executeBlock(stmt: BlockStmt, environment: Environment) {
         val outer = this.environment
         try {
             this.environment = environment
@@ -79,7 +84,7 @@ class Interpreter : Stmt.Visitor<Unit> {
         }
     }
 
-    override fun visit(stmt: Stmt.IfStmt) {
+    private fun execute(stmt: IfStmt) {
         val conditionValue = evaluate(stmt.condition)
         checkBoolean(stmt.token, conditionValue)
         conditionValue as Boolean
@@ -90,7 +95,7 @@ class Interpreter : Stmt.Visitor<Unit> {
         }
     }
 
-    override fun visit(stmt: Stmt.WhileStmt) {
+    private fun execute(stmt: WhileStmt) {
         var conditionValue = evaluate(stmt.condition)
         checkBoolean(stmt.token, conditionValue)
         while (conditionValue as Boolean) {
@@ -99,7 +104,7 @@ class Interpreter : Stmt.Visitor<Unit> {
         }
     }
 
-    override fun visit(stmt: Stmt.RepeatStmt) {
+    private fun execute(stmt: RepeatStmt) {
         var conditionValue = evaluate(stmt.condition)
         checkBoolean(stmt.token, conditionValue)
         do {
@@ -108,12 +113,12 @@ class Interpreter : Stmt.Visitor<Unit> {
         } while (conditionValue as Boolean)
     }
 
-    override fun visit(stmt: Stmt.PrintStmt) {
+    private fun execute(stmt: PrintStmt) {
         val value = evaluate(stmt.expression)
         print(stringify(value))
     }
 
-    override fun visit(stmt: Stmt.PrintlnStmt) {
+    private fun execute(stmt: PrintlnStmt) {
         val value = evaluate(stmt.expression)
         println(stringify(value))
     }
