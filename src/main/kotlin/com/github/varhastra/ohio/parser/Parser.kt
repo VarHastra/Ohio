@@ -9,18 +9,9 @@ import com.github.varhastra.ohio.lexer.TokenType.*
 class Parser(private val tokens: List<Token>) {
 
     class ParseException(
-        val token: Token,
-        message: String,
-        cause: Throwable? = null,
-        enableSuppression: Boolean = false,
-        writableStackTrace: Boolean = true
-    ) : PositionAwareException(
-        Position(token.line, token.columnRange),
-        message,
-        cause,
-        enableSuppression,
-        writableStackTrace
-    )
+        token: Token,
+        message: String
+    ) : PositionAwareException(Position(token.line, token.columnRange), message)
 
     private val _parseExceptions = mutableListOf<ParseException>()
     val parseExceptions: List<ParseException>

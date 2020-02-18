@@ -12,14 +12,10 @@ import com.github.varhastra.ohio.parser.Stmt.*
 class Interpreter {
 
     class RuntimeFailureException(
-        val token: Token,
+        token: Token,
         message: String,
-        cause: Throwable? = null,
-        enableSuppression: Boolean = false,
-        writableStackTrace: Boolean = true
-    ) : PositionAwareException(
-        Position(token.line, token.columnRange), message, cause, enableSuppression, writableStackTrace
-    )
+        cause: Throwable? = null
+    ) : PositionAwareException(Position(token.line, token.columnRange), message, cause)
 
 
     var runtimeFailure: RuntimeFailureException? = null
