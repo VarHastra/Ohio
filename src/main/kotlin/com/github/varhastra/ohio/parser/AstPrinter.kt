@@ -1,42 +1,55 @@
 package com.github.varhastra.ohio.parser
 
-class AstPrinter(private val expression: Expr) : Expr.Visitor<String> {
+class AstPrinter(private val expression: Expr) {
 
-    fun stringify(): String {
-        return expression.accept(this)
-    }
+    fun stringify() = stringify(expression)
 
     fun print() {
+        print(stringify())
+    }
+
+    fun println() {
         println(stringify())
     }
 
-    override fun visit(expr: Expr.Literal): String {
+    private fun stringify(expression: Expr) = when (expression) {
+        is Expr.Literal -> visit(expression)
+        is Expr.Var -> visit(expression)
+        is Expr.Grouping -> visit(expression)
+        is Expr.Unary -> visit(expression)
+        is Expr.Binary -> visit(expression)
+        is Expr.Logical -> visit(expression)
+        is Expr.Assignment -> visit(expression)
+    }
+
+    private fun visit(expr: Expr.Literal): String {
         return expr.value.toString()
     }
 
-    override fun visit(expr: Expr.Var): String {
+    private fun visit(expr: Expr.Var): String {
         return expr.identifier.lexeme
     }
 
-    override fun visit(expr: Expr.Grouping): String {
-        return "(${expr.expr.accept(this)})"
+    private fun visit(expr: Expr.Grouping): String {
+        return "(${stringify(expr.expr)})"
     }
 
-    override fun visit(expr: Expr.Unary): String {
-        return "(${expr.operator.lexeme} ${expr.right.accept(this)})"
+    private fun visit(expr: Expr.Unary): String {
+        return "(${expr.operator.lexeme} ${stringify(expr.right)})"
     }
 
-    override fun visit(expr: Expr.Logical): String {
+    private fun visit(expr: Expr.Logical): String {
         val (left, op, right) = expr
-        return "(${left.accept(this)} ${op.lexeme} ${right.accept(this)})"
+        return "(${stringify(left)} ${op.lexeme} ${stringify(right)})"
     }
 
-    override fun visit(expr: Expr.Assignment): String {
+    private fun visit(expr: Expr.Assignment): String {
         val (identifier, value) = expr
-        return "(${identifier.lexeme} := ${value.accept(this)})"
+        return "(${identifier.lexeme} := ${stringify(value)})"
     }
 
-    override fun visit(expr: Expr.Binary): String {
-        TODO("Not implemented")
+    private fun visit(expr: Expr.Binary): String {
+        val (left, op, right) = expr
+        return "(${stringify(left)} ${op.lexeme} ${stringify(right)})"
     }
 }

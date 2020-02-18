@@ -5,9 +5,10 @@ import com.github.varhastra.ohio.common.exceptions.PositionAwareException
 import com.github.varhastra.ohio.lexer.Token
 import com.github.varhastra.ohio.lexer.TokenType.*
 import com.github.varhastra.ohio.parser.Expr
+import com.github.varhastra.ohio.parser.Expr.*
 import com.github.varhastra.ohio.parser.Stmt
 
-class Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
+class Interpreter : Stmt.Visitor<Unit> {
 
     class RuntimeFailureException(
         val token: Token,
@@ -47,7 +48,15 @@ class Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
     }
 
     private fun evaluate(expr: Expr): Any {
-        return expr.accept(this)
+        return when (expr) {
+            is Literal -> evaluate(expr)
+            is Var -> evaluate(expr)
+            is Grouping -> evaluate(expr)
+            is Unary -> evaluate(expr)
+            is Binary -> evaluate(expr)
+            is Logical -> evaluate(expr)
+            is Assignment -> evaluate(expr)
+        }
     }
 
     override fun visit(stmt: Stmt.ExpressionStatement) {
@@ -109,11 +118,11 @@ class Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
         println(stringify(value))
     }
 
-    override fun visit(expr: Expr.Literal): Any {
+    private fun evaluate(expr: Literal): Any {
         return expr.value
     }
 
-    override fun visit(expr: Expr.Var): Any {
+    private fun evaluate(expr: Var): Any {
         return try {
             environment.get(expr.identifier.lexeme)
         } catch (e: Environment.UnresolvedIdentifierException) {
@@ -121,11 +130,11 @@ class Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
         }
     }
 
-    override fun visit(expr: Expr.Grouping): Any {
+    private fun evaluate(expr: Grouping): Any {
         return evaluate(expr.expr)
     }
 
-    override fun visit(expr: Expr.Unary): Any {
+    private fun evaluate(expr: Unary): Any {
         val (operator, expression) = expr
         val result = evaluate(expression)
         return when (operator.type) {
@@ -141,7 +150,7 @@ class Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
         }
     }
 
-    override fun visit(expr: Expr.Binary): Any {
+    private fun evaluate(expr: Binary): Any {
         return when (expr.operator.type) {
             PLUS -> add(expr)
             MINUS -> sub(expr)
@@ -158,7 +167,7 @@ class Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
         }
     }
 
-    private fun greater(expr: Expr.Binary): Any {
+    private fun greater(expr: Binary): Any {
         val (l, operator, r) = expr
         val left = evaluate(l)
         val right = evaluate(r)
@@ -170,7 +179,7 @@ class Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
         return left > right
     }
 
-    private fun less(expr: Expr.Binary): Any {
+    private fun less(expr: Binary): Any {
         val (l, operator, r) = expr
         val left = evaluate(l)
         val right = evaluate(r)
@@ -182,7 +191,7 @@ class Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
         return left < right
     }
 
-    private fun greaterEqual(expr: Expr.Binary): Any {
+    private fun greaterEqual(expr: Binary): Any {
         val (l, operator, r) = expr
         val left = evaluate(l)
         val right = evaluate(r)
@@ -194,7 +203,7 @@ class Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
         return left >= right
     }
 
-    private fun lessEqual(expr: Expr.Binary): Any {
+    private fun lessEqual(expr: Binary): Any {
         val (l, operator, r) = expr
         val left = evaluate(l)
         val right = evaluate(r)
@@ -206,19 +215,19 @@ class Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
         return left <= right
     }
 
-    private fun equal(expr: Expr.Binary): Any {
-        val (l, operator, r) = expr
+    private fun equal(expr: Binary): Any {
+        val (l, _, r) = expr
         val left = evaluate(l)
         val right = evaluate(r)
 
         return left == right
     }
 
-    private fun notEqual(expr: Expr.Binary): Any {
+    private fun notEqual(expr: Binary): Any {
         return !(equal(expr) as Boolean)
     }
 
-    private fun add(expr: Expr.Binary): Any {
+    private fun add(expr: Binary): Any {
         val (l, operator, r) = expr
         val left = evaluate(l)
         val right = evaluate(r)
@@ -233,7 +242,7 @@ class Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
         }
     }
 
-    private fun sub(expr: Expr.Binary): Any {
+    private fun sub(expr: Binary): Any {
         val (l, operator, r) = expr
         val left = evaluate(l)
         val right = evaluate(r)
@@ -244,7 +253,7 @@ class Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
         return left - right
     }
 
-    private fun mul(expr: Expr.Binary): Any {
+    private fun mul(expr: Binary): Any {
         val (l, operator, r) = expr
         val left = evaluate(l)
         val right = evaluate(r)
@@ -255,7 +264,7 @@ class Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
         return left * right
     }
 
-    private fun div(expr: Expr.Binary): Any {
+    private fun div(expr: Binary): Any {
         val (l, operator, r) = expr
         val left = evaluate(l)
         val right = evaluate(r)
@@ -266,7 +275,7 @@ class Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
         return left / right
     }
 
-    private fun mod(expr: Expr.Binary): Any {
+    private fun mod(expr: Binary): Any {
         val (l, operator, r) = expr
         val left = evaluate(l)
         val right = evaluate(r)
@@ -277,7 +286,7 @@ class Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
         return left % right
     }
 
-    override fun visit(expr: Expr.Logical): Any {
+    private fun evaluate(expr: Logical): Any {
         val operator = expr.operator
         return when (operator.type) {
             AND -> and(expr)
@@ -292,13 +301,13 @@ class Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
         }
     }
 
-    override fun visit(expr: Expr.Assignment): Any {
+    private fun evaluate(expr: Assignment): Any {
         val value = evaluate(expr.value)
         environment.assign(expr.identifier.lexeme, value)
         return value
     }
 
-    private fun and(expr: Expr.Logical): Any {
+    private fun and(expr: Logical): Any {
         val leftResult = evaluate(expr.left)
         checkBoolean(expr.operator, leftResult)
         leftResult as Boolean
@@ -311,11 +320,11 @@ class Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
         }
     }
 
-    private fun nand(expr: Expr.Logical): Any {
+    private fun nand(expr: Logical): Any {
         return !(and(expr) as Boolean)
     }
 
-    private fun or(expr: Expr.Logical): Any {
+    private fun or(expr: Logical): Any {
         val leftResult = evaluate(expr.left)
         checkBoolean(expr.operator, leftResult)
         leftResult as Boolean
@@ -328,11 +337,11 @@ class Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
         }
     }
 
-    private fun nor(expr: Expr.Logical): Any {
+    private fun nor(expr: Logical): Any {
         return !(or(expr) as Boolean)
     }
 
-    private fun xor(expr: Expr.Logical): Any {
+    private fun xor(expr: Logical): Any {
         val leftResult = evaluate(expr.left)
         val rightResult = evaluate(expr.right)
         checkBoolean(expr.operator, leftResult, rightResult)
@@ -341,11 +350,11 @@ class Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
         return (leftResult && !rightResult) || (!leftResult && rightResult)
     }
 
-    private fun xnor(expr: Expr.Logical): Any {
+    private fun xnor(expr: Logical): Any {
         return !(xor(expr) as Boolean)
     }
 
-    private fun imp(expr: Expr.Logical): Any {
+    private fun imp(expr: Logical): Any {
         val leftResult = evaluate(expr.left)
         checkBoolean(expr.operator, leftResult)
         leftResult as Boolean
@@ -358,7 +367,7 @@ class Interpreter : Expr.Visitor<Any>, Stmt.Visitor<Unit> {
         }
     }
 
-    private fun nimp(expr: Expr.Logical): Any {
+    private fun nimp(expr: Logical): Any {
         return !(imp(expr) as Boolean)
     }
 
