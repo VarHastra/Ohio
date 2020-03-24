@@ -143,54 +143,52 @@ class Lexer(private val source: String) {
         val end = range.last + numOfCharsBeforeCurrentLine
         return start..end
     }
-
-
-    companion object {
-        private val tokenPatterns = mapOf(
-            "[(]".toPattern() to LEFT_PAREN,
-            "[)]".toPattern() to RIGHT_PAREN,
-            "[{]".toPattern() to LEFT_BRACE,
-            "[}]".toPattern() to RIGHT_BRACE,
-            "[+]".toPattern() to PLUS,
-            "-".toPattern() to MINUS,
-            "[*]".toPattern() to STAR,
-            "/".toPattern() to SLASH,
-            "%".toPattern() to MOD,
-            ";".toPattern() to SEMICOLON,
-            "==".toPattern() to EQUAL_EQUAL,
-            "!=".toPattern() to BANG_EQUAL,
-            ":=".toPattern() to COLON_EQUAL,
-            ">=".toPattern() to GREATER_EQUAL,
-            "<=".toPattern() to LESS_EQUAL,
-            ">".toPattern() to GREATER,
-            "<".toPattern() to LESS,
-            "[_a-zA-Z][_a-zA-Z0-9]*".toPattern() to IDENTIFIER,
-            "[0-9][_0-9]*".toPattern() to NUMBER,
-            "\"[^\n\"]*\"".toPattern() to STRING
-        )
-
-        private val keywords = mapOf(
-            "true" to TRUE,
-            "false" to FALSE,
-            "print" to PRINT,
-            "println" to PRINTLN,
-            "and" to AND,
-            "nand" to NAND,
-            "xor" to XOR,
-            "xnor" to XNOR,
-            "or" to OR,
-            "nor" to NOR,
-            "imp" to IMP,
-            "nimp" to NIMP,
-            "not" to NOT,
-            "if" to IF,
-            "else" to ELSE,
-            "while" to WHILE,
-            "repeat" to REPEAT
-        )
-
-        private val newlinePattern = "\n".toPattern()
-
-        private val spacePattern = "[ \t\r]+".toPattern()
-    }
 }
+
+
+private val tokenPatterns = mapOf(
+    "[(]".toPattern() to LEFT_PAREN,
+    "[)]".toPattern() to RIGHT_PAREN,
+    "[{]".toPattern() to LEFT_BRACE,
+    "[}]".toPattern() to RIGHT_BRACE,
+    "[+]".toPattern() to PLUS,
+    "-".toPattern() to MINUS,
+    "[*]".toPattern() to STAR,
+    "/".toPattern() to SLASH,
+    "%".toPattern() to MOD,
+    ";".toPattern() to SEMICOLON,
+    "==".toPattern() to EQUAL_EQUAL,
+    "!=".toPattern() to BANG_EQUAL,
+    ":=".toPattern() to COLON_EQUAL,
+    ">=".toPattern() to GREATER_EQUAL,
+    "<=".toPattern() to LESS_EQUAL,
+    ">".toPattern() to GREATER,
+    "<".toPattern() to LESS,
+    "[_a-zA-Z][_a-zA-Z0-9]*".toPattern() to IDENTIFIER,
+    "[0-9][_0-9]*".toPattern() to NUMBER,
+    "\"[^\n\"]*\"".toPattern() to STRING
+)
+
+private val keywords = mapOf(
+    "true" to TRUE,
+    "false" to FALSE,
+    "print" to PRINT,
+    "println" to PRINTLN,
+    "and" to AND,
+    "nand" to NAND,
+    "xor" to XOR,
+    "xnor" to XNOR,
+    "or" to OR,
+    "nor" to NOR,
+    "imp" to IMP,
+    "nimp" to NIMP,
+    "not" to NOT,
+    "if" to IF,
+    "else" to ELSE,
+    "while" to WHILE,
+    "repeat" to REPEAT
+)
+
+private val newlinePattern = "\n".toPattern()
+
+private val spacePattern = "[ \t\r]+".toPattern()
