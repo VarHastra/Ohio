@@ -1,0 +1,15 @@
+a := b := c := true;
+i := 0;
+println "  a  |  b  | c";
+while i < 8 {
+    c := not c;
+    if (i % 2 == 0) {
+        b := not b;
+    }
+    if (i % 4 == 0) {
+        a := not a;
+    }
+
+    println a + "|" + b + "|" + c + "  " + (a and b xor not c);
+    i := i + 1;
+}

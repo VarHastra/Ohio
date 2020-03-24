@@ -1,0 +1,7 @@
+a := initialValue := 5;
+factorial := 1;
+while a > 1 {
+    factorial := factorial * a;
+    a := a - 1;
+}
+println "Factorial of " + initialValue + " is " + factorial;
