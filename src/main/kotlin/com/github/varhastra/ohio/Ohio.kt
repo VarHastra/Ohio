@@ -8,7 +8,6 @@ import kotlin.system.exitProcess
 
 fun main(args: Array<String>) {
     when {
-        args.size > 1 -> renderUsagePrompt()
         args.size == 1 -> launchFile(args[0])
         else -> renderUsagePrompt()
     }
