@@ -1,20 +1,29 @@
 package com.github.varhastra.ohio
 
-import com.github.varhastra.ohio.interpreter.Interpreter
 import com.github.varhastra.ohio.lexer.Lexer
 import com.github.varhastra.ohio.parser.Parser
+import com.github.varhastra.ohio.translator.TranslationResult.Failure
+import com.github.varhastra.ohio.translator.TranslationResult.Success
+import com.github.varhastra.ohio.translator.Translator
 import java.io.File
 import kotlin.system.exitProcess
 
 fun main(args: Array<String>) {
     when {
-        args.size == 1 -> launchFile(args[0])
+        args.size == 1 -> if (args[0].endsWithAnyOf(".txt", ".oh")) {
+            launchFile(args[0])
+        } else {
+            launch(args[0])
+        }
         else -> renderUsagePrompt()
     }
 }
 
 private fun renderUsagePrompt() {
-    println("Usage: ohio <file_name>")
+    println("Usage:")
+    println("\tohio <file_name>")
+    println("\tor")
+    println("\tohio <expression>")
     exitProcess(ExitCode.USAGE_ERROR.value)
 }
 
@@ -38,16 +47,18 @@ private fun launch(source: String) {
     }
 
     val parser = Parser(tokens)
-    val statements = parser.parse()
+    val expression = parser.parseExpression()
     if (parser.hasErrors) {
         errorReporter.report(parser.parseExceptions)
         exitProcess(ExitCode.DATA_FORMAT_ERROR.value)
     }
 
-    val interpreter = Interpreter()
-    interpreter.interpret(statements)
-    if (interpreter.hasErrors) {
-        errorReporter.report(interpreter.runtimeFailure!!)
-        exitProcess(ExitCode.DATA_FORMAT_ERROR.value)
+    val translator = Translator()
+    when (val result = translator.translate(expression)) {
+        is Success -> println(String(result.buffer, result.charset))
+        is Failure -> result.errors.forEach(::println)
     }
 }
+
+
+private fun String.endsWithAnyOf(vararg suffixes: String) = suffixes.any { this.endsWith(it, true) }
