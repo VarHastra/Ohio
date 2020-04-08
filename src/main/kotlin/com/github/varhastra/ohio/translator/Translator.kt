@@ -48,7 +48,9 @@ class Translator(private val charset: Charset = Charsets.UTF_8) {
 
     private fun process(expr: Literal) {
         if (expr.value is Long) {
-            push(expr.value)
+            // Workaround to achieve [push imm64] which seems to be missing on x86-64
+            mov(RAX, expr.value)
+            push(RAX)
         } else {
             log(UnsupportedOperand(expr.value))
         }
@@ -112,7 +114,7 @@ class Translator(private val charset: Charset = Charsets.UTF_8) {
         write(MOV, reg1, reg2)
     }
 
-    private fun push(literal: Long) {
+    private fun push(literal: Int) {
         write(PUSH, literal)
     }
 
@@ -144,7 +146,7 @@ class Translator(private val charset: Charset = Charsets.UTF_8) {
         write(NEG, reg1)
     }
 
-    private fun write(instruction: Instruction, literal: Long) {
+    private fun write(instruction: Instruction, literal: Int) {
         writer.write("${instruction.symbol} $literal\n")
     }
 
