@@ -61,26 +61,26 @@ class Translator(private val charset: Charset = Charsets.UTF_8) {
     private fun process(expr: Unary) {
         process(expr.right)
 
-        pop(RAX)
+        pop(EAX)
         processUnaryOperation(expr)
 
-        push(RAX)
+        push(EAX)
     }
 
     private fun process(expr: Binary) {
         process(expr.left)
         process(expr.right)
 
-        pop(RBX)
-        pop(RAX)
+        pop(EBX)
+        pop(EAX)
         processBinOperation(expr.operation)
 
-        push(RAX)
+        push(EAX)
     }
 
     private fun processUnaryOperation(expr: Unary) {
         if (expr.operation == TokenType.MINUS) {
-            neg(RAX)
+            neg(EAX)
         } else {
             log(UnsupportedOperation(expr.operation))
         }
@@ -88,17 +88,17 @@ class Translator(private val charset: Charset = Charsets.UTF_8) {
 
     private fun processBinOperation(tokenType: TokenType) {
         when (tokenType) {
-            TokenType.PLUS -> add(RAX, RBX)
-            TokenType.MINUS -> sub(RAX, RBX)
-            TokenType.STAR -> imul(RAX, RBX)
+            TokenType.PLUS -> add(EAX, EBX)
+            TokenType.MINUS -> sub(EAX, EBX)
+            TokenType.STAR -> imul(EAX, EBX)
             TokenType.SLASH -> {
-                mov(RDX, 0)
-                idiv(RBX)
+                mov(EDX, 0)
+                idiv(EBX)
             }
             TokenType.MOD -> {
-                mov(RDX, 0)
-                idiv(RBX)
-                mov(RAX, RDX)
+                mov(EDX, 0)
+                idiv(EBX)
+                mov(EAX, EDX)
             }
             else -> log(UnsupportedOperation(tokenType))
         }
