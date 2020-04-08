@@ -108,14 +108,14 @@ class Lexer(private val source: String) {
     private fun addNumberToken(range: IntRange) {
         val literal = source.substring(range).filter { it != '_' }
         try {
-            addToken(NUMBER, range, literal.toLong())
+            addToken(NUMBER, range, literal.toInt())
         } catch (e: NumberFormatException) {
             val columnRange = sourceRangeToColumnRange(range)
             val position = Position(currentLine, columnRange)
             _lexExceptions.add(
                 ValueOutOfRangeException(
                     position,
-                    "The value is out of range. Must be in [-2^63+1..2^63-1]."
+                    "The value is out of range. Must be in [-2^31+1..2^31-1]."
                 )
             )
         }

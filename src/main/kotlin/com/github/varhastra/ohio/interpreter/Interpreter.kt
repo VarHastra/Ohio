@@ -145,7 +145,7 @@ class Interpreter {
             }
             MINUS -> {
                 checkNumber(operator, result)
-                -(result as Long)
+                -(result as Int)
             }
             else -> throw RuntimeFailureException(operator, "Unsupported operation.")
         }
@@ -174,8 +174,8 @@ class Interpreter {
         val right = evaluate(r)
 
         checkNumber(operator, left, right)
-        left as Long
-        right as Long
+        left as Int
+        right as Int
 
         return left > right
     }
@@ -186,8 +186,8 @@ class Interpreter {
         val right = evaluate(r)
 
         checkNumber(operator, left, right)
-        left as Long
-        right as Long
+        left as Int
+        right as Int
 
         return left < right
     }
@@ -198,8 +198,8 @@ class Interpreter {
         val right = evaluate(r)
 
         checkNumber(operator, left, right)
-        left as Long
-        right as Long
+        left as Int
+        right as Int
 
         return left >= right
     }
@@ -210,8 +210,8 @@ class Interpreter {
         val right = evaluate(r)
 
         checkNumber(operator, left, right)
-        left as Long
-        right as Long
+        left as Int
+        right as Int
 
         return left <= right
     }
@@ -237,8 +237,8 @@ class Interpreter {
             stringify(left) + stringify(right)
         } else {
             checkNumber(operator, left, right)
-            left as Long
-            right as Long
+            left as Int
+            right as Int
             left + right
         }
     }
@@ -249,8 +249,8 @@ class Interpreter {
         val right = evaluate(r)
 
         checkNumber(operator, left, right)
-        left as Long
-        right as Long
+        left as Int
+        right as Int
         return left - right
     }
 
@@ -260,8 +260,8 @@ class Interpreter {
         val right = evaluate(r)
 
         checkNumber(operator, left, right)
-        left as Long
-        right as Long
+        left as Int
+        right as Int
         return left * right
     }
 
@@ -271,8 +271,8 @@ class Interpreter {
         val right = evaluate(r)
 
         checkNumber(operator, left, right)
-        left as Long
-        right as Long
+        left as Int
+        right as Int
         return left / right
     }
 
@@ -282,8 +282,8 @@ class Interpreter {
         val right = evaluate(r)
 
         checkNumber(operator, left, right)
-        left as Long
-        right as Long
+        left as Int
+        right as Int
         return left % right
     }
 
@@ -374,7 +374,7 @@ class Interpreter {
 
     private fun checkNumber(operator: Token, vararg values: Any) {
         values.forEach { value ->
-            if (value !is Long) {
+            if (value !is Int) {
                 throw RuntimeFailureException(operator, "Unexpected type. Integer was expected.")
             }
         }
@@ -391,7 +391,7 @@ class Interpreter {
     private fun stringify(obj: Any): String {
         return when (obj) {
             is String -> obj
-            is Long -> obj.toString()
+            is Int -> obj.toString()
             is Boolean -> {
                 return if (obj) "true" else "false"
             }
