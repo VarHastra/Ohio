@@ -4,7 +4,7 @@ import com.github.varhastra.ohio.lexer.TokenType
 import com.github.varhastra.ohio.parser.Expr
 import com.github.varhastra.ohio.parser.Expr.*
 import com.github.varhastra.ohio.translator.Instruction.*
-import com.github.varhastra.ohio.translator.Register64.*
+import com.github.varhastra.ohio.translator.Register32.*
 import com.github.varhastra.ohio.translator.TranslationError.*
 import java.io.ByteArrayOutputStream
 import java.io.Writer
@@ -47,10 +47,8 @@ class Translator(private val charset: Charset = Charsets.UTF_8) {
     }
 
     private fun process(expr: Literal) {
-        if (expr.value is Long) {
-            // Workaround to achieve [push imm64] which seems to be missing on x86-64
-            mov(RAX, expr.value)
-            push(RAX)
+        if (expr.value is Int) {
+            push(expr.value)
         } else {
             log(UnsupportedOperand(expr.value))
         }
@@ -106,11 +104,11 @@ class Translator(private val charset: Charset = Charsets.UTF_8) {
         }
     }
 
-    private fun mov(reg: Register64, literal: Long) {
+    private fun mov(reg: Register32, literal: Int) {
         write(MOV, reg, literal)
     }
 
-    private fun mov(reg1: Register64, reg2: Register64) {
+    private fun mov(reg1: Register32, reg2: Register32) {
         write(MOV, reg1, reg2)
     }
 
@@ -118,31 +116,31 @@ class Translator(private val charset: Charset = Charsets.UTF_8) {
         write(PUSH, literal)
     }
 
-    private fun push(reg: Register64) {
+    private fun push(reg: Register32) {
         write(PUSH, reg)
     }
 
-    private fun pop(reg: Register64) {
+    private fun pop(reg: Register32) {
         write(POP, reg)
     }
 
-    private fun add(reg1: Register64, reg2: Register64) {
+    private fun add(reg1: Register32, reg2: Register32) {
         write(ADD, reg1, reg2)
     }
 
-    private fun sub(reg1: Register64, reg2: Register64) {
+    private fun sub(reg1: Register32, reg2: Register32) {
         write(SUB, reg1, reg2)
     }
 
-    private fun imul(reg1: Register64, reg2: Register64) {
+    private fun imul(reg1: Register32, reg2: Register32) {
         write(IMUL, reg1, reg2)
     }
 
-    private fun idiv(reg: Register64) {
+    private fun idiv(reg: Register32) {
         write(IDIV, reg)
     }
 
-    private fun neg(reg1: Register64) {
+    private fun neg(reg1: Register32) {
         write(NEG, reg1)
     }
 
@@ -150,15 +148,15 @@ class Translator(private val charset: Charset = Charsets.UTF_8) {
         writer.write("${instruction.symbol} $literal\n")
     }
 
-    private fun write(instruction: Instruction, reg: Register64) {
+    private fun write(instruction: Instruction, reg: Register32) {
         writer.write("${instruction.symbol} ${reg.symbol}\n")
     }
 
-    private fun write(instruction: Instruction, reg1: Register64, literal: Long) {
+    private fun write(instruction: Instruction, reg1: Register32, literal: Int) {
         writer.write("${instruction.symbol} ${reg1.symbol}, $literal\n")
     }
 
-    private fun write(instruction: Instruction, reg1: Register64, reg2: Register64) {
+    private fun write(instruction: Instruction, reg1: Register32, reg2: Register32) {
         writer.write("${instruction.symbol} ${reg1.symbol}, ${reg2.symbol}\n")
     }
 
