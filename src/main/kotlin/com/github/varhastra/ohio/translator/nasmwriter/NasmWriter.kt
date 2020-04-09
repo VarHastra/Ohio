@@ -7,7 +7,7 @@ import java.io.Writer
 class NasmWriter(private val writer: Writer) : Closeable {
 
     fun section(name: String) {
-        write("section $name")
+        write("section $name", indent = 0)
     }
 
     fun globalDef(name: String) {
@@ -106,7 +106,7 @@ class NasmWriter(private val writer: Writer) : Closeable {
         write("${mnemonic.symbol} ${reg1.symbol}, ${reg2.symbol}")
     }
 
-    private fun write(str: String, indent: Int = 0, indentSymbol: String = "  ") {
+    private fun write(str: String, indent: Int = 1, indentSymbol: String = "  ") {
         repeat(indent) { writer.write(indentSymbol) }
         writer.write(str)
         writer.write("\n")
