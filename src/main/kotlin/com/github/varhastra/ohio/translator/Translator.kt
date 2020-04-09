@@ -295,23 +295,24 @@ class Translator(private val charset: Charset = Charsets.UTF_8) {
     private fun clearGlobalIdentifiers() {
         varIdentifiers.clear()
     }
-
-    @Suppress("RemoveRedundantQualifierName")
-    private val Expr.Binary.operation
-        get() = this.operator.type
-
-    @Suppress("RemoveRedundantQualifierName")
-    private val Expr.Unary.operation
-        get() = this.operator.type
-
-    @Suppress("RemoveRedundantQualifierName")
-    private val Expr.Var.name
-        get() = this.identifier.lexeme
-
-    @Suppress("RemoveRedundantQualifierName")
-    private val Expr.Var.memRef
-        get() = "[${this.identifier.lexeme}]"
 }
+
+
+@Suppress("RemoveRedundantQualifierName")
+private val Expr.Binary.operation
+    get() = this.operator.type
+
+@Suppress("RemoveRedundantQualifierName")
+private val Expr.Unary.operation
+    get() = this.operator.type
+
+@Suppress("RemoveRedundantQualifierName")
+private val Expr.Var.name
+    get() = this.identifier.lexeme
+
+@Suppress("RemoveRedundantQualifierName")
+private val Expr.Var.memRef
+    get() = "[${this.name}]"
 
 
 
