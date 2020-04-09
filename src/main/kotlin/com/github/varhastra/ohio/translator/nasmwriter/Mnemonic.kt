@@ -1,6 +1,6 @@
 package com.github.varhastra.ohio.translator.nasmwriter
 
-enum class Instruction(val symbol: String) {
+enum class Mnemonic(val symbol: String) {
     MOV("mov"),
     PUSH("push"),
     POP("pop"),

@@ -1,6 +1,6 @@
 package com.github.varhastra.ohio.translator.nasmwriter
 
-import com.github.varhastra.ohio.translator.nasmwriter.Instruction.*
+import com.github.varhastra.ohio.translator.nasmwriter.Mnemonic.*
 import java.io.Closeable
 import java.io.Writer
 
@@ -82,28 +82,28 @@ class NasmWriter(private val writer: Writer) : Closeable {
         write("ret")
     }
 
-    private fun write(instruction: Instruction, literal: Int) {
-        write("${instruction.symbol} $literal")
+    private fun write(mnemonic: Mnemonic, literal: Int) {
+        write("${mnemonic.symbol} $literal")
     }
 
-    private fun write(instruction: Instruction, reg: Register32) {
-        write("${instruction.symbol} ${reg.symbol}")
+    private fun write(mnemonic: Mnemonic, reg: Register32) {
+        write("${mnemonic.symbol} ${reg.symbol}")
     }
 
-    private fun write(instruction: Instruction, label: String) {
-        write("${instruction.symbol} $label")
+    private fun write(mnemonic: Mnemonic, label: String) {
+        write("${mnemonic.symbol} $label")
     }
 
-    private fun write(instruction: Instruction, reg1: Register32, literal: Int) {
-        write("${instruction.symbol} ${reg1.symbol}, $literal")
+    private fun write(mnemonic: Mnemonic, reg1: Register32, literal: Int) {
+        write("${mnemonic.symbol} ${reg1.symbol}, $literal")
     }
 
-    private fun write(instruction: Instruction, reg1: Register32, label: String) {
-        write("${instruction.symbol} ${reg1.symbol}, $label")
+    private fun write(mnemonic: Mnemonic, reg1: Register32, label: String) {
+        write("${mnemonic.symbol} ${reg1.symbol}, $label")
     }
 
-    private fun write(instruction: Instruction, reg1: Register32, reg2: Register32) {
-        write("${instruction.symbol} ${reg1.symbol}, ${reg2.symbol}")
+    private fun write(mnemonic: Mnemonic, reg1: Register32, reg2: Register32) {
+        write("${mnemonic.symbol} ${reg1.symbol}, ${reg2.symbol}")
     }
 
     private fun write(str: String, indent: Int = 0, indentSymbol: String = "  ") {
