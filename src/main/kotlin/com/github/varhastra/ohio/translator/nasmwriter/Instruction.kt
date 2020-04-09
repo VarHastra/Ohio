@@ -1,4 +1,4 @@
-package com.github.varhastra.ohio.translator
+package com.github.varhastra.ohio.translator.nasmwriter
 
 enum class Instruction(val symbol: String) {
     MOV("mov"),

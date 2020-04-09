@@ -3,18 +3,17 @@ package com.github.varhastra.ohio.translator
 import com.github.varhastra.ohio.lexer.TokenType
 import com.github.varhastra.ohio.parser.Expr
 import com.github.varhastra.ohio.parser.Expr.*
-import com.github.varhastra.ohio.translator.Instruction.*
-import com.github.varhastra.ohio.translator.Register32.*
 import com.github.varhastra.ohio.translator.TranslationError.*
+import com.github.varhastra.ohio.translator.nasmwriter.NasmWriter
+import com.github.varhastra.ohio.translator.nasmwriter.Register32.*
 import java.io.ByteArrayOutputStream
-import java.io.Writer
 import java.nio.charset.Charset
 
 class Translator(private val charset: Charset = Charsets.UTF_8) {
 
     private lateinit var outputStream: ByteArrayOutputStream
 
-    private lateinit var writer: Writer
+    private lateinit var writer: NasmWriter
 
     private val identifiersCollector = IdentifiersCollector()
 
@@ -29,7 +28,7 @@ class Translator(private val charset: Charset = Charsets.UTF_8) {
         gatherVariables(expr)
 
         outputStream = ByteArrayOutputStream()
-        writer = outputStream.bufferedWriter(charset)
+        writer = NasmWriter(outputStream.bufferedWriter(charset))
         writer.use {
             generateOutput(expr)
         }
@@ -54,54 +53,64 @@ class Translator(private val charset: Charset = Charsets.UTF_8) {
     }
 
     private fun generateTextSection(expr: Expr) {
-        section(".text")
-        globalDef("_main")
-        externDef("_printf")
-        externDef("_scanf")
-        label("_main")
+        writer.run {
+            section(".text")
+            globalDef("_main")
+            externDef("_printf")
+            externDef("_scanf")
+            label("_main")
+        }
 
         generateScanCalls()
 
         process(expr)
 
         generatePrintfCall()
-        ret()
+        writer.run {
+            ret()
+        }
     }
 
     private fun generateScanCalls() {
         varIdentifiers.forEach { identifier ->
-            push("$identifier@prompt")
-            call("_printf")
-            pop(EBX)
-            push(identifier)
-            push("scanf_format")
-            call("_scanf")
-            pop(EBX)
-            pop(EBX)
+            writer.run {
+                push("$identifier@prompt")
+                call("_printf")
+                pop(EBX)
+                push(identifier)
+                push("scanf_format")
+                call("_scanf")
+                pop(EBX)
+                pop(EBX)
+            }
         }
     }
 
     private fun generatePrintfCall() {
-        push("message")
-        call("_printf")
-        pop(EBX)
-        pop(EBX)
+        writer.run {
+            push("message")
+            call("_printf")
+            pop(EBX)
+            pop(EBX)
+        }
     }
 
     private fun generateRdataSection() {
-        section(".rdata")
-        label("message", "db 'Result is %d', 10, 0")
-        label("scanf_format", "db '%d', 0")
+        writer.run {
+            section(".rdata")
+            label("message", "db 'Result is %d', 10, 0")
+            label("scanf_format", "db '%d', 0")
+        }
 
         varIdentifiers.forEach { identifier ->
-            label("$identifier@prompt", "db 'Enter $identifier: ', 0")
+            writer.label("$identifier@prompt", "db 'Enter $identifier: ', 0")
         }
     }
 
     private fun generateBssSection() {
-        section(".bss")
+        writer.section(".bss")
         varIdentifiers.forEach { identifier ->
-            label(identifier, "resq 1")
+            writer.label(identifier, "resq 1")
         }
     }
 
@@ -118,7 +127,7 @@ class Translator(private val charset: Charset = Charsets.UTF_8) {
 
     private fun process(expr: Literal) {
         if (expr.value is Int) {
-            push(expr.value)
+            writer.push(expr.value)
         } else {
             log(UnsupportedOperand(expr.value))
         }
@@ -131,30 +140,32 @@ class Translator(private val charset: Charset = Charsets.UTF_8) {
     private fun process(expr: Unary) {
         process(expr.right)
 
-        pop(EAX)
+        writer.pop(EAX)
         processUnaryOperation(expr)
 
-        push(EAX)
+        writer.push(EAX)
     }
 
     private fun process(expr: Binary) {
         process(expr.left)
         process(expr.right)
 
-        pop(EBX)
-        pop(EAX)
+        writer.run {
+            pop(EBX)
+            pop(EAX)
+        }
         processBinOperation(expr.operation)
 
-        push(EAX)
+        writer.push(EAX)
     }
 
     private fun process(expr: Var) {
-        push("dword ${expr.memRef}")
+        writer.push("dword ${expr.memRef}")
     }
 
     private fun processUnaryOperation(expr: Unary) {
         if (expr.operation == TokenType.MINUS) {
-            neg(EAX)
+            writer.neg(EAX)
         } else {
             log(UnsupportedOperation(expr.operation))
         }
@@ -162,126 +173,20 @@ class Translator(private val charset: Charset = Charsets.UTF_8) {
 
     private fun processBinOperation(tokenType: TokenType) {
         when (tokenType) {
-            TokenType.PLUS -> add(EAX, EBX)
-            TokenType.MINUS -> sub(EAX, EBX)
-            TokenType.STAR -> imul(EAX, EBX)
+            TokenType.PLUS -> writer.add(EAX, EBX)
+            TokenType.MINUS -> writer.sub(EAX, EBX)
+            TokenType.STAR -> writer.imul(EAX, EBX)
             TokenType.SLASH -> {
-                mov(EDX, 0)
-                idiv(EBX)
+                writer.mov(EDX, 0)
+                writer.idiv(EBX)
             }
             TokenType.MOD -> {
-                mov(EDX, 0)
-                idiv(EBX)
-                mov(EAX, EDX)
+                writer.mov(EDX, 0)
+                writer.idiv(EBX)
+                writer.mov(EAX, EDX)
             }
             else -> log(UnsupportedOperation(tokenType))
         }
-    }
-
-    private fun section(name: String) {
-        write("section $name")
-    }
-
-    private fun globalDef(name: String) {
-        write("global $name")
-    }
-
-    private fun externDef(name: String) {
-        write("extern $name")
-    }
-
-    private fun label(name: String, value: String = "") {
-        write("$name: $value")
-    }
-
-    private fun comment(msg: String) {
-        write("; $msg")
-    }
-
-    private fun mov(reg: Register32, literal: Int) {
-        write(MOV, reg, literal)
-    }
-
-    private fun mov(reg1: Register32, reg2: Register32) {
-        write(MOV, reg1, reg2)
-    }
-
-    private fun mov(reg: Register32, label: String) {
-        write(MOV, reg, label)
-    }
-
-    private fun push(label: String) {
-        write(PUSH, label)
-    }
-
-    private fun push(literal: Int) {
-        write(PUSH, literal)
-    }
-
-    private fun push(reg: Register32) {
-        write(PUSH, reg)
-    }
-
-    private fun pop(reg: Register32) {
-        write(POP, reg)
-    }
-
-    private fun add(reg1: Register32, reg2: Register32) {
-        write(ADD, reg1, reg2)
-    }
-
-    private fun sub(reg1: Register32, reg2: Register32) {
-        write(SUB, reg1, reg2)
-    }
-
-    private fun imul(reg1: Register32, reg2: Register32) {
-        write(IMUL, reg1, reg2)
-    }
-
-    private fun idiv(reg: Register32) {
-        write(IDIV, reg)
-    }
-
-    private fun neg(reg1: Register32) {
-        write(NEG, reg1)
-    }
-
-    private fun call(label: String) {
-        write("call $label")
-    }
-
-    private fun ret() {
-        write("ret")
-    }
-
-    private fun write(instruction: Instruction, literal: Int) {
-        write("${instruction.symbol} $literal")
-    }
-
-    private fun write(instruction: Instruction, reg: Register32) {
-        write("${instruction.symbol} ${reg.symbol}")
-    }
-
-    private fun write(instruction: Instruction, label: String) {
-        write("${instruction.symbol} $label")
-    }
-
-    private fun write(instruction: Instruction, reg1: Register32, literal: Int) {
-        write("${instruction.symbol} ${reg1.symbol}, $literal")
-    }
-
-    private fun write(instruction: Instruction, reg1: Register32, label: String) {
-        write("${instruction.symbol} ${reg1.symbol}, $label")
-    }
-
-    private fun write(instruction: Instruction, reg1: Register32, reg2: Register32) {
-        write("${instruction.symbol} ${reg1.symbol}, ${reg2.symbol}")
-    }
-
-    private fun write(str: String, indent: Int = 0, indentSymbol: String = "  ") {
-        repeat(indent) { writer.write(indentSymbol) }
-        writer.write(str)
-        writer.write("\n")
     }
 
     private fun log(error: TranslationError) {
@@ -290,10 +195,6 @@ class Translator(private val charset: Charset = Charsets.UTF_8) {
 
     private fun clearLog() {
         errors.clear()
-    }
-
-    private fun clearGlobalIdentifiers() {
-        varIdentifiers.clear()
     }
 }
 
@@ -313,7 +214,3 @@ private val Expr.Var.name
 @Suppress("RemoveRedundantQualifierName")
 private val Expr.Var.memRef
     get() = "[${this.name}]"
-
-
-
-
