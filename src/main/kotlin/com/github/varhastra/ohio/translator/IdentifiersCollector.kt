@@ -14,8 +14,6 @@ class IdentifiersCollector {
 
     private fun process(expr: Expr) {
         when (expr) {
-            is Expr.Literal -> {
-            }
             is Expr.Grouping -> process(expr)
             is Expr.Unary -> process(expr)
             is Expr.Binary -> process(expr)
