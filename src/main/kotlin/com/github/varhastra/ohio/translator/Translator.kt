@@ -51,7 +51,6 @@ class Translator(private val charset: Charset = Charsets.UTF_8) {
         generateTextSection(expr)
         generateRdataSection()
         generateBssSection()
-        ret()
     }
 
     private fun generateTextSection(expr: Expr) {
@@ -66,6 +65,7 @@ class Translator(private val charset: Charset = Charsets.UTF_8) {
         process(expr)
 
         generatePrintfCall()
+        ret()
     }
 
     private fun generateScanCalls() {
