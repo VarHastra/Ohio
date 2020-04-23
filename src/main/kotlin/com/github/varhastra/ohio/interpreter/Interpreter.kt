@@ -273,6 +273,11 @@ class Interpreter {
         checkNumber(operator, left, right)
         left as Int
         right as Int
+
+        if (right == 0) {
+            throw RuntimeFailureException(expr.operator, "Division by zero.")
+        }
+
         return left / right
     }
 
@@ -284,6 +289,11 @@ class Interpreter {
         checkNumber(operator, left, right)
         left as Int
         right as Int
+
+        if (right == 0) {
+            throw RuntimeFailureException(expr.operator, "Division by zero.")
+        }
+
         return left % right
     }
 
