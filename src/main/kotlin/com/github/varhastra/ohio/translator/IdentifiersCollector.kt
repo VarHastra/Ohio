@@ -14,38 +14,38 @@ class IdentifiersCollector {
 
     private fun process(expr: Expr) {
         when (expr) {
-            is Expr.Grouping -> process(expr)
-            is Expr.Unary -> process(expr)
-            is Expr.Binary -> process(expr)
-            is Expr.Logical -> process(expr)
-            is Expr.Var -> process(expr)
-            is Expr.Assignment -> process(expr)
+            is Expr.Grouping -> processGrouping(expr)
+            is Expr.Unary -> processUnary(expr)
+            is Expr.Binary -> processBinary(expr)
+            is Expr.Logical -> processLogical(expr)
+            is Expr.Var -> processVar(expr)
+            is Expr.Assignment -> processAssignment(expr)
         }
     }
 
-    private fun process(expr: Expr.Grouping) {
+    private fun processGrouping(expr: Expr.Grouping) {
         process(expr.expr)
     }
 
-    private fun process(expr: Expr.Unary) {
+    private fun processUnary(expr: Expr.Unary) {
         process(expr.right)
     }
 
-    private fun process(expr: Expr.Binary) {
+    private fun processBinary(expr: Expr.Binary) {
         process(expr.left)
         process(expr.right)
     }
 
-    private fun process(expr: Expr.Var) {
+    private fun processVar(expr: Expr.Var) {
         identifiers.add(expr.identifier.lexeme)
     }
 
-    private fun process(expr: Expr.Logical) {
+    private fun processLogical(expr: Expr.Logical) {
         process(expr.left)
         process(expr.right)
     }
 
-    private fun process(expr: Expr.Assignment) {
+    private fun processAssignment(expr: Expr.Assignment) {
         process(expr.value)
         identifiers.add(expr.identifier.lexeme)
     }

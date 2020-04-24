@@ -127,16 +127,16 @@ class Translator(
 
     private fun process(expr: Expr) {
         when (expr) {
-            is Literal -> process(expr)
-            is Grouping -> process(expr)
-            is Unary -> process(expr)
-            is Binary -> process(expr)
-            is Var -> process(expr)
+            is Literal -> processLiteral(expr)
+            is Grouping -> processGrouping(expr)
+            is Unary -> processUnary(expr)
+            is Binary -> processBinary(expr)
+            is Var -> processVar(expr)
             else -> log(UnsupportedExpression(expr))
         }
     }
 
-    private fun process(expr: Literal) {
+    private fun processLiteral(expr: Literal) {
         if (expr.value is Int) {
             instructionBuffer.push(expr.value)
         } else {
@@ -144,11 +144,11 @@ class Translator(
         }
     }
 
-    private fun process(expr: Grouping) {
+    private fun processGrouping(expr: Grouping) {
         process(expr.expr)
     }
 
-    private fun process(expr: Unary) {
+    private fun processUnary(expr: Unary) {
         process(expr.right)
 
         instructionBuffer.pop(EAX)
@@ -157,7 +157,7 @@ class Translator(
         instructionBuffer.push(EAX)
     }
 
-    private fun process(expr: Binary) {
+    private fun processBinary(expr: Binary) {
         process(expr.left)
         process(expr.right)
 
@@ -170,7 +170,7 @@ class Translator(
         instructionBuffer.push(EAX)
     }
 
-    private fun process(expr: Var) {
+    private fun processVar(expr: Var) {
         instructionBuffer.push("dword ${expr.memRef}")
     }
 
