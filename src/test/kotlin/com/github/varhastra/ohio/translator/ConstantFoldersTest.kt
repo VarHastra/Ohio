@@ -108,6 +108,16 @@ class ConstantFoldersTest {
     }
 
     @Test
+    fun `doesn't fold int division by zero 1`() {
+        val exprStr = "5 / 0"
+        val expr = Parser(Lexer(exprStr).lex()).parseExpression()
+
+        val actual = expr.fold()
+
+        assertEquals(expr, actual)
+    }
+
+    @Test
     fun `folds int modulo`() {
         val exprStr = "5 % 2"
         val expr = Parser(Lexer(exprStr).lex()).parseExpression()
@@ -115,6 +125,16 @@ class ConstantFoldersTest {
         val actual = expr.fold()
 
         assertEquals(Literal(1), actual)
+    }
+
+    @Test
+    fun `doesn't fold int division by zero 2`() {
+        val exprStr = "5 % 0"
+        val expr = Parser(Lexer(exprStr).lex()).parseExpression()
+
+        val actual = expr.fold()
+
+        assertEquals(expr, actual)
     }
 
     @Test
