@@ -9,7 +9,10 @@ import com.github.varhastra.ohio.translator.nasmwriter.Register32.*
 import java.io.ByteArrayOutputStream
 import java.nio.charset.Charset
 
-class Translator(private val charset: Charset = Charsets.UTF_8) {
+class Translator(
+    private val charset: Charset = Charsets.UTF_8,
+    private val foldConstants: Boolean = true
+) {
 
     private lateinit var outputStream: ByteArrayOutputStream
 
@@ -25,12 +28,14 @@ class Translator(private val charset: Charset = Charsets.UTF_8) {
 
     fun translate(expr: Expr): TranslationResult {
         clearLog()
-        gatherVariables(expr)
+
+        val expression = if (foldConstants) expr.fold() else expr
+        gatherVariables(expression)
 
         outputStream = ByteArrayOutputStream()
         writer = NasmWriter(outputStream.bufferedWriter(charset))
         writer.use {
-            generateOutput(expr)
+            generateOutput(expression)
         }
 
         return if (hasErrors) {
