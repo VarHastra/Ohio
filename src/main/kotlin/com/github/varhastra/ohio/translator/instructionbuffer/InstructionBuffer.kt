@@ -146,6 +146,6 @@ private val pushPattern = Regex("${PUSH.symbol}\\s+")
 
 
 private fun <T> List<T>.penult(): T {
-    if (size < 2) throw NoSuchElementException("List is empty.")
+    if (size < 2) throw NoSuchElementException("List contains less than 2 items.")
     return this[lastIndex - 1]
 }
