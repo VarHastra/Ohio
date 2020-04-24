@@ -1,4 +1,4 @@
-package com.github.varhastra.ohio.translator.nasmwriter
+package com.github.varhastra.ohio.translator.instructionbuffer
 
 enum class Register32(val symbol: String) {
     EAX("eax"),

@@ -4,19 +4,20 @@ import com.github.varhastra.ohio.lexer.TokenType
 import com.github.varhastra.ohio.parser.Expr
 import com.github.varhastra.ohio.parser.Expr.*
 import com.github.varhastra.ohio.translator.TranslationError.*
-import com.github.varhastra.ohio.translator.nasmwriter.NasmWriter
-import com.github.varhastra.ohio.translator.nasmwriter.Register32.*
+import com.github.varhastra.ohio.translator.instructionbuffer.InstructionBuffer
+import com.github.varhastra.ohio.translator.instructionbuffer.Register32.*
 import java.io.ByteArrayOutputStream
 import java.nio.charset.Charset
 
 class Translator(
     private val charset: Charset = Charsets.UTF_8,
-    private val foldConstants: Boolean = true
+    private val constantFoldingIsOn: Boolean = true,
+    private val peepholeOptimizationIsOn: Boolean = true
 ) {
 
     private lateinit var outputStream: ByteArrayOutputStream
 
-    private lateinit var writer: NasmWriter
+    private lateinit var instructionBuffer: InstructionBuffer
 
     private val identifiersCollector = IdentifiersCollector()
 
@@ -29,14 +30,13 @@ class Translator(
     fun translate(expr: Expr): TranslationResult {
         clearLog()
 
-        val expression = if (foldConstants) expr.fold() else expr
+        val expression = if (constantFoldingIsOn) expr.fold() else expr
         gatherVariables(expression)
 
         outputStream = ByteArrayOutputStream()
-        writer = NasmWriter(outputStream.bufferedWriter(charset))
-        writer.use {
-            generateOutput(expression)
-        }
+        instructionBuffer = InstructionBuffer(peepholeOptimizationIsOn)
+        generateBufferContent(expression)
+        writeBufferToDestination()
 
         return if (hasErrors) {
             TranslationResult.Failure(errors.toList())
@@ -51,14 +51,20 @@ class Translator(
         varIdentifiers.addAll(identifiers)
     }
 
-    private fun generateOutput(expr: Expr) {
+    private fun generateBufferContent(expr: Expr) {
         generateTextSection(expr)
         generateRdataSection()
         generateBssSection()
     }
 
+    private fun writeBufferToDestination() {
+        NasmWriter(outputStream, charset).use {
+            it.write(instructionBuffer)
+        }
+    }
+
     private fun generateTextSection(expr: Expr) {
-        writer.run {
+        instructionBuffer.run {
             section(".text")
             globalDef("_main")
             externDef("_printf")
@@ -71,14 +77,14 @@ class Translator(
         process(expr)
 
         generatePrintfCall()
-        writer.run {
+        instructionBuffer.run {
             ret()
         }
     }
 
     private fun generateScanCalls() {
         varIdentifiers.forEach { identifier ->
-            writer.run {
+            instructionBuffer.run {
                 push("$identifier@prompt")
                 call("_printf")
                 pop(EBX)
@@ -92,7 +98,7 @@ class Translator(
     }
 
     private fun generatePrintfCall() {
-        writer.run {
+        instructionBuffer.run {
             push("message")
             call("_printf")
             pop(EBX)
@@ -101,21 +107,21 @@ class Translator(
     }
 
     private fun generateRdataSection() {
-        writer.run {
+        instructionBuffer.run {
             section(".rdata")
             label("message", "db 'Result is %d', 10, 0")
             label("scanf_format", "db '%d', 0")
         }
 
         varIdentifiers.forEach { identifier ->
-            writer.label("$identifier@prompt", "db 'Enter $identifier: ', 0")
+            instructionBuffer.label("$identifier@prompt", "db 'Enter $identifier: ', 0")
         }
     }
 
     private fun generateBssSection() {
-        writer.section(".bss")
+        instructionBuffer.section(".bss")
         varIdentifiers.forEach { identifier ->
-            writer.label(identifier, "resq 1")
+            instructionBuffer.label(identifier, "resq 1")
         }
     }
 
@@ -132,7 +138,7 @@ class Translator(
 
     private fun process(expr: Literal) {
         if (expr.value is Int) {
-            writer.push(expr.value)
+            instructionBuffer.push(expr.value)
         } else {
             log(UnsupportedOperand(expr.value))
         }
@@ -145,32 +151,32 @@ class Translator(
     private fun process(expr: Unary) {
         process(expr.right)
 
-        writer.pop(EAX)
+        instructionBuffer.pop(EAX)
         processUnaryOperation(expr)
 
-        writer.push(EAX)
+        instructionBuffer.push(EAX)
     }
 
     private fun process(expr: Binary) {
         process(expr.left)
         process(expr.right)
 
-        writer.run {
+        instructionBuffer.run {
             pop(EBX)
             pop(EAX)
         }
         processBinOperation(expr.operation)
 
-        writer.push(EAX)
+        instructionBuffer.push(EAX)
     }
 
     private fun process(expr: Var) {
-        writer.push("dword ${expr.memRef}")
+        instructionBuffer.push("dword ${expr.memRef}")
     }
 
     private fun processUnaryOperation(expr: Unary) {
         if (expr.operation == TokenType.MINUS) {
-            writer.neg(EAX)
+            instructionBuffer.neg(EAX)
         } else {
             log(UnsupportedOperation(expr.operation))
         }
@@ -178,17 +184,17 @@ class Translator(
 
     private fun processBinOperation(tokenType: TokenType) {
         when (tokenType) {
-            TokenType.PLUS -> writer.add(EAX, EBX)
-            TokenType.MINUS -> writer.sub(EAX, EBX)
-            TokenType.STAR -> writer.imul(EAX, EBX)
+            TokenType.PLUS -> instructionBuffer.add(EAX, EBX)
+            TokenType.MINUS -> instructionBuffer.sub(EAX, EBX)
+            TokenType.STAR -> instructionBuffer.imul(EAX, EBX)
             TokenType.SLASH -> {
-                writer.mov(EDX, 0)
-                writer.idiv(EBX)
+                instructionBuffer.mov(EDX, 0)
+                instructionBuffer.idiv(EBX)
             }
             TokenType.MOD -> {
-                writer.mov(EDX, 0)
-                writer.idiv(EBX)
-                writer.mov(EAX, EDX)
+                instructionBuffer.mov(EDX, 0)
+                instructionBuffer.idiv(EBX)
+                instructionBuffer.mov(EAX, EDX)
             }
             else -> log(UnsupportedOperation(tokenType))
         }
