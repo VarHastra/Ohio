@@ -39,7 +39,7 @@ private fun foldGrouping(expr: Grouping): Expr {
 }
 
 private fun foldUnary(expr: Unary): Expr {
-    val right = expr.right
+    val right = foldInternal(expr.right)
     val operator = expr.operator.type
     return when {
         right is Literal && canBeFoldedAsUnary(operator, right) -> Literal(evaluate(operator, right))
