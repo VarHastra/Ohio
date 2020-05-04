@@ -33,7 +33,7 @@ private fun foldInternal(expr: Expr): Expr {
 private fun foldGrouping(expr: Grouping): Expr {
     val nestedExpr = foldInternal(expr.expr)
     return when (nestedExpr) {
-        is Literal -> return Literal(nestedExpr.value)
+        is Literal -> nestedExpr
         else -> expr.copy(expr = nestedExpr)
     }
 }
